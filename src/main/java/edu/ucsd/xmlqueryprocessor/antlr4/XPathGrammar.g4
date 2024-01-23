@@ -34,18 +34,23 @@ absolutePath
     | 'doc' '(' fileName ')' '//' relativePath
     ;
 
+
 relativePath
+    : rpLeaf
+    | relativePath '[' pathFilter ']'
+    | '(' relativePath ')'
+    | rpLeaf ',' relativePath
+    | rpLeaf '/' relativePath
+    | rpLeaf '//' relativePath
+    ;
+
+rpLeaf
     : tagName
     | '*'
     | '.'
     | '..'
-    | 'text()' // TODO: implement text()
+    | 'text()'
     | '@' attName
-    | '(' relativePath ')'
-    | relativePath '/' relativePath
-    | relativePath '//' relativePath
-    | relativePath '[' pathFilter ']'
-    | relativePath ',' relativePath
     ;
 
 pathFilter
@@ -54,7 +59,7 @@ pathFilter
     | relativePath 'eq' relativePath
     | relativePath '==' relativePath
     | relativePath 'is' relativePath
-    | relativePath ' = ' stringConstant // TODO: implement STRING_CONST
+    | relativePath ' = ' stringConstant
     | '(' pathFilter ')'
     | pathFilter 'and' pathFilter
     | pathFilter 'or' pathFilter

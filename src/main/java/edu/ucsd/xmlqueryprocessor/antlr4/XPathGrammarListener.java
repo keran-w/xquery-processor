@@ -28,6 +28,16 @@ public interface XPathGrammarListener extends ParseTreeListener {
 	 */
 	void exitRelativePath(XPathGrammarParser.RelativePathContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link XPathGrammarParser#rpLeaf}.
+	 * @param ctx the parse tree
+	 */
+	void enterRpLeaf(XPathGrammarParser.RpLeafContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XPathGrammarParser#rpLeaf}.
+	 * @param ctx the parse tree
+	 */
+	void exitRpLeaf(XPathGrammarParser.RpLeafContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link XPathGrammarParser#pathFilter}.
 	 * @param ctx the parse tree
 	 */

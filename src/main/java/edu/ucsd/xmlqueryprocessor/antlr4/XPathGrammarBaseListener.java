@@ -41,6 +41,18 @@ public class XPathGrammarBaseListener implements XPathGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterRpLeaf(XPathGrammarParser.RpLeafContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitRpLeaf(XPathGrammarParser.RpLeafContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterPathFilter(XPathGrammarParser.PathFilterContext ctx) { }
 	/**
 	 * {@inheritDoc}
