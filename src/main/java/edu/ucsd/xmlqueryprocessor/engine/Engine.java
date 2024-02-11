@@ -181,11 +181,11 @@ public class Engine {
 
     public Set<Node> processPathFilter(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processPathFilter: " + tree.getText());
+        Set<Node> results = new LinkedHashSet<>();
         if ("*".equals(tree.getText())) {
-            return null;
+            return results;
         }
         Map<String, Object> children = getChildren(tree);
-        Set<Node> results = new LinkedHashSet<>();
         if (children.containsKey("otherChildren")) {
             String other = (String) children.get("otherChildren");
             // priority: or > and > not
