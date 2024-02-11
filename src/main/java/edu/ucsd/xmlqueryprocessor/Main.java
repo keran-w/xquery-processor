@@ -19,14 +19,16 @@ public class Main {
             return;
         }
 
-        String FILE_DIRECTORY = "xquery-processor-master/";
+//        String FILE_DIRECTORY = "xquery-processor-master/";
+
+        String FILE_DIRECTORY = "";
 
         String QUERY_FILE_DIRECTORY = args[0];
         String OUTPUT_FILE_DIRECTORY = args[1];
 
 //        String FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/";
-//        String QUERY_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/mytest.txt";
-//        String OUTPUT_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/output/";
+//        String QUERY_FILE_DIRECTORY = "/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/test.txt";
+//        String OUTPUT_FILE_DIRECTORY = "/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/output/";
 
         Engine engine = new Engine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
 

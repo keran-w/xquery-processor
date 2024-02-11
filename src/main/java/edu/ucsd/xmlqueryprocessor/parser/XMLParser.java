@@ -101,6 +101,7 @@ public class XMLParser {
                 }
 
                 if (nodeNameList.contains(target) ^ inequalityFlag) {
+                    System.out.println("\t\tFound a match: " + node);
                     results.add(node);
                 }
 

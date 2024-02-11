@@ -63,7 +63,8 @@ public class Engine {
         for (int i = 0; i < tree.getChildCount(); i++) {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
-            // System.out.println("\tChild: " + child.getText() + ", " + ruleName);
+
+             System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
                 continue;
@@ -120,9 +121,13 @@ public class Engine {
             processRelativePath(relativePath);
             for (ParseTree pathFilter : pathFilters) {
                 results = processPathFilter(pathFilter);
-                if (!results.isEmpty()) {
-                    document = XMLParser.convertResultsToDOM(results);
+                if (results == null) {
+                    // do nothing
+                    continue;
                 }
+//                if (!results.isEmpty()) {
+                document = XMLParser.convertResultsToDOM(results);
+//                }
 //                else {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
@@ -131,7 +136,7 @@ public class Engine {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             ParseTree rpLeaf = (ParseTree) children.get("rpLeaf");
             if ("text()".equals(relativePath.getText())) {
-                processSingleRelativePath(rpLeaf);
+                processRpLeaf(rpLeaf);
             } else {
                 processRelativePath(relativePath);
             }
@@ -183,7 +188,7 @@ public class Engine {
         System.out.println("processPathFilter: " + tree.getText());
         Set<Node> results = new LinkedHashSet<>();
         if ("*".equals(tree.getText())) {
-            return results;
+            return null;
         }
         Map<String, Object> children = getChildren(tree);
         if (children.containsKey("otherChildren")) {
