@@ -20,6 +20,8 @@ public class Engine {
     private boolean processTagName = false;
     private String pathFilterPrefix = null;
 
+    private boolean inequalityFlag = false;
+
     public Engine(String fileDirectory, String outputFileDirectory) {
         reset();
         this.fileDirectory = fileDirectory;
@@ -27,6 +29,7 @@ public class Engine {
     }
 
     public void reset() {
+        inequalityFlag = false;
         document = null;
         ruleNames = null;
         processTagName = false;
@@ -124,6 +127,14 @@ public class Engine {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
             }
+        } else if (children.containsKey("relativePath") && children.containsKey("rpLeaf")) {
+            ParseTree relativePath = (ParseTree) children.get("relativePath");
+            ParseTree rpLeaf = (ParseTree) children.get("rpLeaf");
+            if ("text()".equals(relativePath.getText())) {
+                processSingleRelativePath(rpLeaf);
+            } else {
+                processRelativePath(relativePath);
+            }
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             // processSingleRelativePath(relativePath);
@@ -132,6 +143,11 @@ public class Engine {
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
+    }
+
+    public void processSingleRelativePath(ParseTree tree) {
+        System.out.println("processSingleRelativePath: " + tree.getText());
+        document = XMLParser.checkIfChildNodeExists(document, tree.getText());
     }
 
     public void processRpLeaf(ParseTree tree) {
@@ -165,6 +181,9 @@ public class Engine {
 
     public Set<Node> processPathFilter(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processPathFilter: " + tree.getText());
+        if ("*".equals(tree.getText())) {
+            return null;
+        }
         Map<String, Object> children = getChildren(tree);
         Set<Node> results = new LinkedHashSet<>();
         if (children.containsKey("otherChildren")) {
@@ -250,10 +269,15 @@ public class Engine {
         String target = ((ParseTree) children.get("stringConstant")).getText();
         target = target.substring(1, target.length() - 1);
         System.out.println("\tTarget: " + target);
-        boolean inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
+        inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
         System.out.println("\tInequalityFlag: " + inequalityFlag);
         // document = XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
-        return XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
+        if ("text()".equals(left.get(left.size() - 1))) {
+            return XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
+        } else {
+            assert left.get(left.size() - 1).startsWith("@");
+            return XMLParser.processEquality(document, left.get(left.size() - 1).substring(1), target, inequalityFlag);
+        }
     }
 
     public void processStringConstant(ParseTree tree) {

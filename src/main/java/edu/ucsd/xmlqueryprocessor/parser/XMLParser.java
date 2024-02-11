@@ -3,6 +3,7 @@ package edu.ucsd.xmlqueryprocessor.parser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -12,10 +13,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
 import java.util.*;
 
 public class XMLParser {
@@ -99,8 +96,8 @@ public class XMLParser {
                 String tagName = node.getNodeName();
 
                 List<String> nodeNameList = new ArrayList<>();
-                for (Node speaker : getByNodeNameHelper(node, left)) {
-                    nodeNameList.add(speaker.getTextContent());
+                for (Node n : getByNodeNameHelper(node, left)) {
+                    nodeNameList.add(n.getTextContent());
                 }
 
                 if (nodeNameList.contains(target) ^ inequalityFlag) {
@@ -111,6 +108,43 @@ public class XMLParser {
             // System.out.println(results);
             return results;
             // return convertResultsToDOM(results);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static boolean nodeExistsDFS(Node root, String targetNodeName) {
+        NodeList childNodes = root.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node node = childNodes.item(i);
+            if (node.getNodeName().equals(targetNodeName)) {
+                return true;
+            }
+            if (nodeExistsDFS(node, targetNodeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static Document checkIfChildNodeExists(Document document, String targetNodeName) {
+        System.out.println("Checking if child node exists: " + targetNodeName);
+
+        try {
+            Set<Node> results = new LinkedHashSet<>();
+            Node root = document.getDocumentElement();
+            for (int i = 0; i < root.getChildNodes().getLength(); i++) {
+                Node node = root.getChildNodes().item(i);
+                if (node.getNodeName().equals(targetNodeName)) {
+                    results.add(node);
+                }
+                if (nodeExistsDFS(node, targetNodeName)) {
+                    results.add(node);
+                }
+            }
+            return convertResultsToDOM(results);
+
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -166,7 +200,6 @@ public class XMLParser {
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(filePath);
             document.getDocumentElement().normalize();
-
             return document;
         } catch (Exception e) {
             e.printStackTrace();
