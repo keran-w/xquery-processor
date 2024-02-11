@@ -64,7 +64,7 @@ public class Engine {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
 
-             System.out.println("\tChild: " + child.getText() + ", " + ruleName);
+            System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
                 continue;
@@ -125,9 +125,9 @@ public class Engine {
                     // do nothing
                     continue;
                 }
-//                if (!results.isEmpty()) {
-                document = XMLParser.convertResultsToDOM(results);
-//                }
+                if (!results.isEmpty()) {
+                    document = XMLParser.convertResultsToDOM(results);
+                }
 //                else {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
