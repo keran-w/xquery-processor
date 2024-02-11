@@ -14,19 +14,19 @@ public class Main {
     // xquery-processor-master/output/
 
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY>");
-            return;
-        }
+//        if (args.length < 2) {
+//            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY>");
+//            return;
+//        }
 
-        String FILE_DIRECTORY = "xquery-processor-master/";
+        String FILE_DIRECTORY = "";
 
-        String QUERY_FILE_DIRECTORY = args[0];
-        String OUTPUT_FILE_DIRECTORY = args[1];
+//        String QUERY_FILE_DIRECTORY = args[0];
+//        String OUTPUT_FILE_DIRECTORY = args[1];
 
 //        String FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/";
-//        String QUERY_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/mytest.txt";
-//        String OUTPUT_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/output/";
+        String QUERY_FILE_DIRECTORY = "mytest.txt";
+        String OUTPUT_FILE_DIRECTORY = "output/";
 
         Engine engine = new Engine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
 

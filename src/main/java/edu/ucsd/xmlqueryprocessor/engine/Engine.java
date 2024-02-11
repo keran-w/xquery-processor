@@ -95,8 +95,12 @@ public class Engine {
         ParseTree relativePath = (ParseTree) children.get("relativePath");
         document = processFileName(fileName);
         assert Objects.equals(children.get("otherChildren"), "doc()//");
-        processRelativePath(relativePath);
 
+        Set<Node> results = new LinkedHashSet<>();
+        results = processRelativePath(relativePath);
+        System.out.println("Root Results");
+        System.out.println(results);
+        document = XMLParser.convertResultsToDOM(results);
     }
 
     public Document processFileName(ParseTree tree) {
@@ -106,7 +110,7 @@ public class Engine {
         return XMLParser.parseXML(filePath);
     }
 
-    public void processRelativePath(ParseTree tree) throws ParserConfigurationException {
+    public Set<Node> processRelativePath(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processRelativePath: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
         Set<Node> results = new LinkedHashSet<>();
@@ -114,16 +118,41 @@ public class Engine {
         if (children.containsKey("relativePath") && children.containsKey("pathFilter")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+            // results.addAll(processRelativePath(relativePath));
             processRelativePath(relativePath);
             for (ParseTree pathFilter : pathFilters) {
-                results = processPathFilter(pathFilter);
-                if (!results.isEmpty()) {
-                    document = XMLParser.convertResultsToDOM(results);
-                }
+                // results = processPathFilter(pathFilter);
+                System.out.println("Start pathFilter -------------- : " + pathFilter.getText());
+                results.addAll(processPathFilter(pathFilter));
+                System.out.println("\t pathFilter: " + pathFilter.getText());
+                System.out.println("relativePath: " + relativePath .getText());
+                System.out.println("\t --- pathfilter: results");
+                System.out.println(results);
+                System.out.println("\t" + results.size());
 //                else {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
             }
+<<<<<<< Updated upstream
+=======
+//            if (!results.isEmpty()) {
+//                System.out.println("---- Write in document ----");
+//                document = XMLParser.convertResultsToDOM(results);
+//            }
+            System.out.println("Final Results");
+            System.out.println(results);
+            System.out.println("\t processRelativePath: " + tree.getText());
+//            document = XMLParser.convertResultsToDOM(results);
+        } else if (children.containsKey("relativePath") && children.containsKey("rpLeaf")) {
+            ParseTree relativePath = (ParseTree) children.get("relativePath");
+            ParseTree rpLeaf = (ParseTree) children.get("rpLeaf");
+            if ("text()".equals(relativePath.getText())) {
+                processSingleRelativePath(rpLeaf);
+            } else {
+                // processRelativePath(relativePath);
+                results.addAll(processRelativePath(relativePath));
+            }
+>>>>>>> Stashed changes
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             // processSingleRelativePath(relativePath);
@@ -132,6 +161,9 @@ public class Engine {
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
+        System.out.println("**processRelativePath: " + tree.getText());
+        System.out.println(results);
+        return results;
     }
 
     public void processRpLeaf(ParseTree tree) {
@@ -165,8 +197,15 @@ public class Engine {
 
     public Set<Node> processPathFilter(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processPathFilter: " + tree.getText());
-        Map<String, Object> children = getChildren(tree);
+<<<<<<< Updated upstream
+=======
         Set<Node> results = new LinkedHashSet<>();
+        if ("*".equals(tree.getText())) {
+            return results;
+        }
+>>>>>>> Stashed changes
+        Map<String, Object> children = getChildren(tree);
+
         if (children.containsKey("otherChildren")) {
             String other = (String) children.get("otherChildren");
             // priority: or > and > not
@@ -213,7 +252,7 @@ public class Engine {
             }
 
         } else if (children.containsKey("relativePath")) {
-            processRelativePath((ParseTree) children.get("relativePath"));
+            results.addAll(processRelativePath((ParseTree) children.get("relativePath")));
         } else if (children.containsKey("stringConstant")) {
             processStringConstant((ParseTree) children.get("stringConstant"));
         } else {
