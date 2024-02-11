@@ -3,7 +3,6 @@ package edu.ucsd.xmlqueryprocessor.parser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,6 +19,14 @@ import java.util.Queue;
 import java.util.*;
 
 public class XMLParser {
+
+//    public static void main(String[] args) {
+//        Document document = XMLParser.parseXML("/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/output/result2.xml");
+////        traverseBFS(document);
+//        assert document != null;
+//        Document res = processEquality(document, "SPEAKER", "CAESAR");
+//        dumpDocument(res, "/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/output/result2_where.xml");
+//    }
 
     public static void traverseBFS(Document document) {
         if (document == null) {
@@ -92,56 +99,18 @@ public class XMLParser {
                 String tagName = node.getNodeName();
 
                 List<String> nodeNameList = new ArrayList<>();
-                for (Node n : getByNodeNameHelper(node, left)) {
-                    nodeNameList.add(n.getTextContent());
+                for (Node speaker : getByNodeNameHelper(node, left)) {
+                    nodeNameList.add(speaker.getTextContent());
                 }
 
                 if (nodeNameList.contains(target) ^ inequalityFlag) {
                     results.add(node);
                 }
+
             }
             // System.out.println(results);
             return results;
             // return convertResultsToDOM(results);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-    private static boolean nodeExistsDFS(Node root, String targetNodeName) {
-        NodeList childNodes = root.getChildNodes();
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            Node node = childNodes.item(i);
-            if (node.getNodeName().equals(targetNodeName)) {
-                return true;
-            }
-            if (nodeExistsDFS(node, targetNodeName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    public static Document checkIfChildNodeExists(Document document, String targetNodeName) {
-        System.out.println("Checking if child node exists: " + targetNodeName);
-
-        try {
-            List<Node> results = new ArrayList<>();
-            Node root = document.getDocumentElement();
-            for (int i = 0; i < root.getChildNodes().getLength(); i++) {
-                Node node = root.getChildNodes().item(i);
-                if (node.getNodeName().equals(targetNodeName)) {
-                    results.add(node);
-                }
-                if (nodeExistsDFS(node, targetNodeName)) {
-                    results.add(node);
-                }
-            }
-            return convertResultsToDOM(results);
-
         } catch (Exception e) {
             e.printStackTrace();
             return null;
