@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.*;
 
 public class XMLParser {
 
@@ -49,8 +50,8 @@ public class XMLParser {
 
     }
 
-    public static List<Node> getByNodeNameHelper(Node root, String targetNodeName) {
-        List<Node> results = new ArrayList<>();
+    public static Set<Node> getByNodeNameHelper(Node root, String targetNodeName) {
+        Set<Node> results = new LinkedHashSet<>();
         Queue<Node> queue = new LinkedList<>();
         queue.add(root);
         while (!queue.isEmpty()) {
@@ -72,7 +73,7 @@ public class XMLParser {
                 return null;
             }
             Node root = document.getDocumentElement();
-            List<Node> results = getByNodeNameHelper(root, targetNodeName);
+            Set<Node> results = getByNodeNameHelper(root, targetNodeName);
             return convertResultsToDOM(results);
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,12 +81,12 @@ public class XMLParser {
         }
     }
 
-    public static Document processEquality(Document document, String left, String target, boolean inequalityFlag) {
+    public static Set<Node> processEquality(Document document, String left, String target, boolean inequalityFlag) {
         System.out.println("Processing equality: " + left + " = " + target);
 
         try {
             Node root = document.getDocumentElement();
-            List<Node> results = new ArrayList<>();
+            Set<Node> results = new LinkedHashSet<>();
             for (int i = 0; i < root.getChildNodes().getLength(); i++) {
                 Node node = root.getChildNodes().item(i);
                 String tagName = node.getNodeName();
@@ -99,7 +100,9 @@ public class XMLParser {
                     results.add(node);
                 }
             }
-            return convertResultsToDOM(results);
+            // System.out.println(results);
+            return results;
+            // return convertResultsToDOM(results);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -161,7 +164,7 @@ public class XMLParser {
         }
     }
 
-    public static Document convertResultsToDOM(List<Node> results) throws ParserConfigurationException {
+    public static Document convertResultsToDOM(Set<Node> results) throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document document = builder.newDocument();

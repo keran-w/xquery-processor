@@ -6,7 +6,9 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.util.*;
 
 public class Engine {
@@ -33,7 +35,7 @@ public class Engine {
         inequalityFlag = false;
     }
 
-    public void process(String query, String fileName) {
+    public void process(String query, String fileName) throws ParserConfigurationException {
         reset();
         XPathParser parser = new XPathParser(query);
         ParseTree parseTree = parser.getParseTree();
@@ -80,7 +82,15 @@ public class Engine {
         return childrenKeyMap;
     }
 
+
     public void processRoot(ParseTree tree) {
+    /**
+     * Function [[ap]]A: process the root node of the tree
+     *
+     * @param tree, the root node of the tree
+     */
+
+    public void processRoot(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processRoot: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
         ParseTree fileName = (ParseTree) children.get("fileName");
@@ -97,10 +107,11 @@ public class Engine {
         return XMLParser.parseXML(filePath);
     }
 
-    public void processRelativePath(ParseTree tree) {
+    public void processRelativePath(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processRelativePath: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
-        System.out.println("\tChildren: " + children.keySet());
+        Set<Node> results = new LinkedHashSet<>();
+        // System.out.println("\tChildren: " + children.keySet());
         if (children.containsKey("relativePath") && children.containsKey("pathFilter")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
@@ -119,6 +130,17 @@ public class Engine {
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             processSingleRelativePath(relativePath);
+                results = processPathFilter(pathFilter);
+                if (!results.isEmpty()) {
+                    document = XMLParser.convertResultsToDOM(results);
+                }
+//                else {
+//                    throw new NotImplementedException("There are no results in processRelativePath!");
+//                }
+            }
+        } else if (children.containsKey("relativePath")) {
+            ParseTree relativePath = (ParseTree) children.get("relativePath");
+            // processSingleRelativePath(relativePath);
         } else if (children.containsKey("rpLeaf")) {
             processRpLeaf((ParseTree) children.get("rpLeaf"));
         } else {
@@ -155,16 +177,41 @@ public class Engine {
         }
     }
 
-    public void processPathFilter(ParseTree tree) {
+    public Set<Node> processPathFilter(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processPathFilter: " + tree.getText());
-        Map<String, Object> children = getChildren(tree);
         if ("*".equals(tree.getText())) {
             return;
         }
+        Map<String, Object> children = getChildren(tree);
+        Set<Node> results = new LinkedHashSet<>();
         if (children.containsKey("otherChildren")) {
             String other = (String) children.get("otherChildren");
+            // priority: or > and > not
             if (Objects.equals(other, "=")) {
-                processEquality(tree);
+                results = processEquality(tree);
+                System.out.println("Equaltiy results: -----");
+                System.out.println(results);
+            } else if (Objects.equals(other, "or")) {
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    // add to the results
+                    results.addAll(processPathFilter(pathFilter));
+                }
+                System.out.println("Or results: -----");
+                System.out.println(results);
+            } else if (Objects.equals(other, "and")) {
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    if (results.isEmpty()) {
+                        // results empty, just add into the results
+                        results.addAll(processPathFilter(pathFilter));
+                    } else {
+                        // find the intersection part
+                        results.retainAll(processPathFilter(pathFilter));
+                    }
+                }
+                System.out.println("And results: -----");
+                System.out.println(results);
             } else if (Objects.equals(other, "not")) {
                 if (pathFilterPrefix == null) {
                     pathFilterPrefix = "not";
@@ -173,11 +220,15 @@ public class Engine {
                 }
                 List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
                 for (ParseTree pathFilter : pathFilters) {
-                    processPathFilter(pathFilter);
+                    // add to the results
+                    results.addAll(processPathFilter(pathFilter));
                 }
+                System.out.println("Not results: -----");
+                System.out.println(results);
             } else {
                 throw new NotImplementedException("processPathFilter has not implemented " + other);
             }
+
         } else if (children.containsKey("relativePath")) {
             processRelativePath((ParseTree) children.get("relativePath"));
         } else if (children.containsKey("stringConstant")) {
@@ -185,6 +236,8 @@ public class Engine {
         } else {
             throw new NotImplementedException("processPathFilter has not implemented " + tree.getText());
         }
+
+        return results;
     }
 
     public List<String> processRelativePathForEquality(ParseTree tree) {
@@ -203,12 +256,14 @@ public class Engine {
         return results;
     }
 
+
     public void processSingleRelativePath(ParseTree tree) {
         System.out.println("processSingleRelativePath: " + tree.getText());
         document = XMLParser.checkIfChildNodeExists(document, tree.getText());
     }
 
-    public void processEquality(ParseTree tree) {
+
+    public Set<Node> processEquality(ParseTree tree) {
         System.out.println("processEquality: " + tree.getText() + " with prefix " + pathFilterPrefix);
         Map<String, Object> children = getChildren(tree);
         System.out.println("\tChildren: " + children.keySet());
@@ -220,13 +275,14 @@ public class Engine {
         System.out.println("\tTarget: " + target);
         inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
         System.out.println("\tInequalityFlag: " + inequalityFlag);
+
         System.out.println("left: " + left);
 
         if ("text()".equals(left.get(left.size() - 1))) {
-            document = XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
+            return XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
         } else {
             assert left.get(left.size() - 1).startsWith("@");
-            document = XMLParser.processEquality(document, left.get(left.size() - 1).substring(1), target, inequalityFlag);
+            return XMLParser.processEquality(document, left.get(left.size() - 1).substring(1), target, inequalityFlag);
         }
     }
 
