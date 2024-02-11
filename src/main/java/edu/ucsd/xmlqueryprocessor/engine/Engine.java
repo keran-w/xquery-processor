@@ -9,7 +9,6 @@ import org.w3c.dom.Document;
 
 import java.util.*;
 
-
 public class Engine {
 
     private final String fileDirectory;
@@ -24,7 +23,6 @@ public class Engine {
         this.fileDirectory = fileDirectory;
         this.outputFileDirectory = outputFileDirectory;
     }
-
 
     public void reset() {
         document = null;
@@ -52,50 +50,33 @@ public class Engine {
         }
     }
 
-    /*public TreeMap<String, Object> createSortedMap(String[] order) {
-        Map<String, Integer> indexMap = new HashMap<>();
-        for (int i = 0; i < order.length; i++) {
-            indexMap.put(order[i], i);
-        }
-        Comparator<String> customComparator = (key1, key2) -> {
-            int index1 = indexMap.getOrDefault(key1, -1);
-            int index2 = indexMap.getOrDefault(key2, -1);
-            if (index1 == -1 && index2 == -1) {
-                return key1.compareTo(key2);
-            } else if (index1 == -1) {
-                return 1;
-            } else if (index2 == -1) {
-                return -1;
-            } else {
-                return index1 - index2;
-            }
-        };
-        return new TreeMap<>(customComparator);
-    }*/
-
     public Map<String, Object> getChildren(ParseTree tree) {
-//        String[] order = {"fileName", "relativePath", "rpLeaf", "tagName", "pathFilter", "stringConstant"};
-//        Map<String, Object> childrenKeyMap = createSortedMap(order);
         Map<String, Object> childrenKeyMap = new HashMap<>();
         List<String> otherChildren = new ArrayList<>();
+        List<ParseTree> pathFilters = new ArrayList<>();
 
         for (int i = 0; i < tree.getChildCount(); i++) {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
+            System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
                 continue;
             }
-//            System.out.println("\t" + ruleName + ": " + child.getText());
-            childrenKeyMap.put(ruleName, child);
+            if ("pathFilter".equals(ruleName)) {
+                pathFilters.add(child);
+            } else {
+                childrenKeyMap.put(ruleName, child);
+            }
         }
         if (!otherChildren.isEmpty()) {
-//            System.out.println("\totherChildren: " + String.join("", otherChildren));
             childrenKeyMap.put("otherChildren", String.join("", otherChildren));
+        }
+        if (!pathFilters.isEmpty()) {
+            childrenKeyMap.put("pathFilter", pathFilters);
         }
         return childrenKeyMap;
     }
-
 
     /**
      * Function [[ap]]A: process the root node of the tree
@@ -114,20 +95,6 @@ public class Engine {
         assert Objects.equals(children.get("otherChildren"), "doc()//");
         processRelativePath(relativePath);
 
-//        Map<String, Object> rpChildren = getChildren(relativePath);
-//        if (rpChildren.containsKey("rpLeaf")) {
-//            processRpLeaf((ParseTree) rpChildren.get("rpLeaf"));
-//        } else if (rpChildren.containsKey("otherChildren")) {
-//            if ("[]".equals(rpChildren.get("otherChildren"))) {
-//                ParseTree subRelativePath = (ParseTree) rpChildren.get("relativePath");
-//                ParseTree pathFilter = (ParseTree) rpChildren.get("pathFilter");
-//                processRpLeaf(subRelativePath);
-//            } else {
-//                throw new NotImplementedException("processRoot has not implemented " + rpChildren.get("otherChildren"));
-//            }
-//        } else {
-//            throw new NotImplementedException("processRoot has not implemented " + relativePath.getText());
-//        }
     }
 
     public Document processFileName(ParseTree tree) {
@@ -137,45 +104,39 @@ public class Engine {
         return XMLParser.parseXML(filePath);
     }
 
-
     public void processRelativePath(ParseTree tree) {
         System.out.println("processRelativePath: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
-        if (children.containsKey("rpLeaf")) {
-            processRpLeaf((ParseTree) children.get("rpLeaf"));
+        System.out.println("\tChildren: " + children.keySet());
+        if (children.containsKey("relativePath") && children.containsKey("pathFilter")) {
+            ParseTree relativePath = (ParseTree) children.get("relativePath");
+            List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+            processRelativePath(relativePath);
+            for (ParseTree pathFilter : pathFilters) {
+                processPathFilter(pathFilter);
+            }
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
-            ParseTree pathFilter = (ParseTree) children.get("pathFilter");
-            processRelativePath(relativePath);
-            processPathFilter(pathFilter);
+            processSingleRelativePath(relativePath);
+        } else if (children.containsKey("rpLeaf")) {
+            processRpLeaf((ParseTree) children.get("rpLeaf"));
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
-//        getChildren(tree).forEach((ruleName, child) -> {
-//            if ("relativePath".equals(ruleName)) {
-//                processRelativePath((ParseTree) child);
-//            } else if ("rpLeaf".equals(ruleName)) {
-//                processRpLeaf((ParseTree) child);
-//            } else if ("pathFilter".equals(ruleName)) {
-//                processPathFilter((ParseTree) child);
-//            }
-//        });
     }
 
     public void processRpLeaf(ParseTree tree) {
         System.out.println("processRpLeaf: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
-//        if (children.containsKey("rpLeaf")) {
-//            processRpLeaf((ParseTree) children.get("rpLeaf"));
-//        } else {
         children.forEach((ruleName, child) -> {
             if ("tagName".equals(ruleName)) {
                 processTagName((ParseTree) child);
+            } else if (".".equals(ruleName) || "otherChildren".equals(ruleName)) {
+                // do nothing
             } else {
-                throw new NotImplementedException("This method has not been implemented yet.");
+                throw new NotImplementedException("processRpLeaf has not implemented " + ruleName);
             }
         });
-//        }
     }
 
     public void processTagName(ParseTree tree) {
@@ -206,7 +167,10 @@ public class Engine {
                 } else {
                     pathFilterPrefix = "not/" + pathFilterPrefix;
                 }
-                processPathFilter((ParseTree) children.get("pathFilter"));
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    processPathFilter(pathFilter);
+                }
             } else {
                 throw new NotImplementedException("processPathFilter has not implemented " + other);
             }
@@ -234,6 +198,7 @@ public class Engine {
         results.add(((ParseTree) children.get("rpLeaf")).getText());
         return results;
     }
+
 
     public void processEquality(ParseTree tree) {
         System.out.println("processEquality: " + tree.getText() + " with prefix " + pathFilterPrefix);
