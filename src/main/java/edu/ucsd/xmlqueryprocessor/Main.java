@@ -1,28 +1,31 @@
 package edu.ucsd.xmlqueryprocessor;
 
 import edu.ucsd.xmlqueryprocessor.engine.Engine;
+
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
 
 public class Main {
-    // run in sh: java Main "D://Java-code/CSE232b/milestone1/xquery-processor-master/" \
-    // "D://Java-code/CSE232b/milestone1/xquery-processor-master/test.txt.txt" \
-    // "D://Java-code/CSE232b/milestone1/xquery-processor-master/output/"
+    // run in sh: java -jar out/artifacts/xquery_processor_jar/xquery-processor.jar \
+    // xquery-processor-master/test.txt \
+    // xquery-processor-master/output/
 
     public static void main(String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: java Main <FILE_DIRECTORY> <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY>");
+        if (args.length < 2) {
+            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY>");
             return;
         }
 
-        String FILE_DIRECTORY = args[0];
-        String QUERY_FILE_DIRECTORY = args[1];
-        String OUTPUT_FILE_DIRECTORY = args[2];
+        String FILE_DIRECTORY = "xquery-processor-master/";
+
+        String QUERY_FILE_DIRECTORY = args[0];
+        String OUTPUT_FILE_DIRECTORY = args[1];
 
 //        String FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/";
-//        String QUERY_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/test.txt";
+//        String QUERY_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/mytest.txt";
 //        String OUTPUT_FILE_DIRECTORY = "D://Java-code/CSE232b/milestone1/xquery-processor-master/output/";
 
         Engine engine = new Engine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
@@ -44,6 +47,8 @@ public class Main {
             }
         } catch (IOException e) {
             System.err.println("Error reading queries file: " + e.getMessage());
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
         }
     }
 }
