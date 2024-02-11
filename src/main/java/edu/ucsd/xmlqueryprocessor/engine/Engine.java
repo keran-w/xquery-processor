@@ -122,9 +122,12 @@ public class Engine {
         // System.out.println("\tChildren: " + children.keySet());
         if (children.containsKey("relativePath") && children.containsKey("pathFilter")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
+
             List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
-            processRelativePath(relativePath);
+            Set<Node> results_1 = processRelativePath(relativePath);
+            Set<Node> results_2 = new LinkedHashSet<>();
             for (ParseTree pathFilter : pathFilters) {
+                System.out.println("\tPathFilter: " + pathFilter.getText());
                 Set<Node> results_ = processPathFilter(pathFilter);
                 if (results_ == null) {
                     return null;
@@ -132,11 +135,21 @@ public class Engine {
 //                if (!results.isEmpty()) {
 //                    document = XMLParser.convertResultsToDOM(results);
 //                }
-                results.addAll(results_);
+                results_2.addAll(results_);
 //                else {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
             }
+            System.out.println("\tRelativePath: " + relativePath.getText());
+            System.out.println("\tResults_1: " + results_1);
+            System.out.println("\tResults_2: " + results_2);
+            if (results_1 != null) {
+                results_1.retainAll(results_2);
+                results.addAll(results_1);
+            } else {
+                results.addAll(results_2);
+            }
+            System.out.println("\tResults: " + results);
         } else if (children.containsKey("relativePath") && children.containsKey("rpLeaf")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             ParseTree rpLeaf = (ParseTree) children.get("rpLeaf");
@@ -158,6 +171,7 @@ public class Engine {
             if (tmp != processTagName) {
                 return null;
             }
+            return null;
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
