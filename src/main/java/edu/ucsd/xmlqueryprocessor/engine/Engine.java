@@ -17,6 +17,7 @@ public class Engine {
     private String[] ruleNames;
     private boolean processTagName = false;
     private String pathFilterPrefix = null;
+    private boolean inequalityFlag = false;
 
     public Engine(String fileDirectory, String outputFileDirectory) {
         reset();
@@ -29,6 +30,7 @@ public class Engine {
         ruleNames = null;
         processTagName = false;
         pathFilterPrefix = null;
+        inequalityFlag = false;
     }
 
     public void process(String query, String fileName) {
@@ -216,7 +218,7 @@ public class Engine {
         String target = ((ParseTree) children.get("stringConstant")).getText();
         target = target.substring(1, target.length() - 1);
         System.out.println("\tTarget: " + target);
-        boolean inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
+        inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
         System.out.println("\tInequalityFlag: " + inequalityFlag);
         System.out.println("left: " + left);
 
