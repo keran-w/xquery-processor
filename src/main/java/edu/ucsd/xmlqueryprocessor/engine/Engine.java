@@ -6,9 +6,10 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.util.*;
-
 
 public class Engine {
 
@@ -25,7 +26,6 @@ public class Engine {
         this.outputFileDirectory = outputFileDirectory;
     }
 
-
     public void reset() {
         document = null;
         ruleNames = null;
@@ -33,7 +33,7 @@ public class Engine {
         pathFilterPrefix = null;
     }
 
-    public void process(String query, String fileName) {
+    public void process(String query, String fileName) throws ParserConfigurationException {
         reset();
         XPathParser parser = new XPathParser(query);
         ParseTree parseTree = parser.getParseTree();
@@ -52,50 +52,33 @@ public class Engine {
         }
     }
 
-    /*public TreeMap<String, Object> createSortedMap(String[] order) {
-        Map<String, Integer> indexMap = new HashMap<>();
-        for (int i = 0; i < order.length; i++) {
-            indexMap.put(order[i], i);
-        }
-        Comparator<String> customComparator = (key1, key2) -> {
-            int index1 = indexMap.getOrDefault(key1, -1);
-            int index2 = indexMap.getOrDefault(key2, -1);
-            if (index1 == -1 && index2 == -1) {
-                return key1.compareTo(key2);
-            } else if (index1 == -1) {
-                return 1;
-            } else if (index2 == -1) {
-                return -1;
-            } else {
-                return index1 - index2;
-            }
-        };
-        return new TreeMap<>(customComparator);
-    }*/
-
     public Map<String, Object> getChildren(ParseTree tree) {
-//        String[] order = {"fileName", "relativePath", "rpLeaf", "tagName", "pathFilter", "stringConstant"};
-//        Map<String, Object> childrenKeyMap = createSortedMap(order);
         Map<String, Object> childrenKeyMap = new HashMap<>();
         List<String> otherChildren = new ArrayList<>();
+        List<ParseTree> pathFilters = new ArrayList<>();
 
         for (int i = 0; i < tree.getChildCount(); i++) {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
+            // System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
                 continue;
             }
-//            System.out.println("\t" + ruleName + ": " + child.getText());
-            childrenKeyMap.put(ruleName, child);
+            if ("pathFilter".equals(ruleName)) {
+                pathFilters.add(child);
+            } else {
+                childrenKeyMap.put(ruleName, child);
+            }
         }
         if (!otherChildren.isEmpty()) {
-//            System.out.println("\totherChildren: " + String.join("", otherChildren));
             childrenKeyMap.put("otherChildren", String.join("", otherChildren));
+        }
+        if (!pathFilters.isEmpty()) {
+            childrenKeyMap.put("pathFilter", pathFilters);
         }
         return childrenKeyMap;
     }
-
 
     /**
      * Function [[ap]]A: process the root node of the tree
@@ -103,7 +86,7 @@ public class Engine {
      * @param tree, the root node of the tree
      */
 
-    public void processRoot(ParseTree tree) {
+    public void processRoot(ParseTree tree) throws ParserConfigurationException {
 
         System.out.println("processRoot: " + tree.getText());
 
@@ -114,20 +97,6 @@ public class Engine {
         assert Objects.equals(children.get("otherChildren"), "doc()//");
         processRelativePath(relativePath);
 
-//        Map<String, Object> rpChildren = getChildren(relativePath);
-//        if (rpChildren.containsKey("rpLeaf")) {
-//            processRpLeaf((ParseTree) rpChildren.get("rpLeaf"));
-//        } else if (rpChildren.containsKey("otherChildren")) {
-//            if ("[]".equals(rpChildren.get("otherChildren"))) {
-//                ParseTree subRelativePath = (ParseTree) rpChildren.get("relativePath");
-//                ParseTree pathFilter = (ParseTree) rpChildren.get("pathFilter");
-//                processRpLeaf(subRelativePath);
-//            } else {
-//                throw new NotImplementedException("processRoot has not implemented " + rpChildren.get("otherChildren"));
-//            }
-//        } else {
-//            throw new NotImplementedException("processRoot has not implemented " + relativePath.getText());
-//        }
     }
 
     public Document processFileName(ParseTree tree) {
@@ -137,45 +106,46 @@ public class Engine {
         return XMLParser.parseXML(filePath);
     }
 
-
-    public void processRelativePath(ParseTree tree) {
+    public void processRelativePath(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processRelativePath: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
-        if (children.containsKey("rpLeaf")) {
-            processRpLeaf((ParseTree) children.get("rpLeaf"));
+        Set<Node> results = new LinkedHashSet<>();
+        // System.out.println("\tChildren: " + children.keySet());
+        if (children.containsKey("relativePath") && children.containsKey("pathFilter")) {
+            ParseTree relativePath = (ParseTree) children.get("relativePath");
+            List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+            processRelativePath(relativePath);
+            for (ParseTree pathFilter : pathFilters) {
+                results = processPathFilter(pathFilter);
+                if (!results.isEmpty()) {
+                    document = XMLParser.convertResultsToDOM(results);
+                }
+//                else {
+//                    throw new NotImplementedException("There are no results in processRelativePath!");
+//                }
+            }
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
-            ParseTree pathFilter = (ParseTree) children.get("pathFilter");
-            processRelativePath(relativePath);
-            processPathFilter(pathFilter);
+            // processSingleRelativePath(relativePath);
+        } else if (children.containsKey("rpLeaf")) {
+            processRpLeaf((ParseTree) children.get("rpLeaf"));
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
-//        getChildren(tree).forEach((ruleName, child) -> {
-//            if ("relativePath".equals(ruleName)) {
-//                processRelativePath((ParseTree) child);
-//            } else if ("rpLeaf".equals(ruleName)) {
-//                processRpLeaf((ParseTree) child);
-//            } else if ("pathFilter".equals(ruleName)) {
-//                processPathFilter((ParseTree) child);
-//            }
-//        });
     }
 
     public void processRpLeaf(ParseTree tree) {
         System.out.println("processRpLeaf: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
-//        if (children.containsKey("rpLeaf")) {
-//            processRpLeaf((ParseTree) children.get("rpLeaf"));
-//        } else {
         children.forEach((ruleName, child) -> {
             if ("tagName".equals(ruleName)) {
                 processTagName((ParseTree) child);
+            } else if (".".equals(ruleName) || "otherChildren".equals(ruleName)) {
+                // do nothing
             } else {
-                throw new NotImplementedException("This method has not been implemented yet.");
+                throw new NotImplementedException("processRpLeaf has not implemented " + ruleName);
             }
         });
-//        }
     }
 
     public void processTagName(ParseTree tree) {
@@ -193,23 +163,55 @@ public class Engine {
         }
     }
 
-    public void processPathFilter(ParseTree tree) {
+    public Set<Node> processPathFilter(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processPathFilter: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
+        Set<Node> results = new LinkedHashSet<>();
         if (children.containsKey("otherChildren")) {
             String other = (String) children.get("otherChildren");
+            // priority: or > and > not
             if (Objects.equals(other, "=")) {
-                processEquality(tree);
+                results = processEquality(tree);
+                System.out.println("Equaltiy results: -----");
+                System.out.println(results);
+            } else if (Objects.equals(other, "or")) {
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    // add to the results
+                    results.addAll(processPathFilter(pathFilter));
+                }
+                System.out.println("Or results: -----");
+                System.out.println(results);
+            } else if (Objects.equals(other, "and")) {
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    if (results.isEmpty()) {
+                        // results empty, just add into the results
+                        results.addAll(processPathFilter(pathFilter));
+                    } else {
+                        // find the intersection part
+                        results.retainAll(processPathFilter(pathFilter));
+                    }
+                }
+                System.out.println("And results: -----");
+                System.out.println(results);
             } else if (Objects.equals(other, "not")) {
                 if (pathFilterPrefix == null) {
                     pathFilterPrefix = "not";
                 } else {
                     pathFilterPrefix = "not/" + pathFilterPrefix;
                 }
-                processPathFilter((ParseTree) children.get("pathFilter"));
+                List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
+                for (ParseTree pathFilter : pathFilters) {
+                    // add to the results
+                    results.addAll(processPathFilter(pathFilter));
+                }
+                System.out.println("Not results: -----");
+                System.out.println(results);
             } else {
                 throw new NotImplementedException("processPathFilter has not implemented " + other);
             }
+
         } else if (children.containsKey("relativePath")) {
             processRelativePath((ParseTree) children.get("relativePath"));
         } else if (children.containsKey("stringConstant")) {
@@ -217,6 +219,8 @@ public class Engine {
         } else {
             throw new NotImplementedException("processPathFilter has not implemented " + tree.getText());
         }
+
+        return results;
     }
 
     public List<String> processRelativePathForEquality(ParseTree tree) {
@@ -235,7 +239,8 @@ public class Engine {
         return results;
     }
 
-    public void processEquality(ParseTree tree) {
+
+    public Set<Node> processEquality(ParseTree tree) {
         System.out.println("processEquality: " + tree.getText() + " with prefix " + pathFilterPrefix);
         Map<String, Object> children = getChildren(tree);
         System.out.println("\tChildren: " + children.keySet());
@@ -247,7 +252,8 @@ public class Engine {
         System.out.println("\tTarget: " + target);
         boolean inequalityFlag = pathFilterPrefix != null && pathFilterPrefix.startsWith("not");
         System.out.println("\tInequalityFlag: " + inequalityFlag);
-        document = XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
+        // document = XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
+        return XMLParser.processEquality(document, left.get(left.size() - 2), target, inequalityFlag);
     }
 
     public void processStringConstant(ParseTree tree) {
