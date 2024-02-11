@@ -99,8 +99,13 @@ public class Engine {
         ParseTree relativePath = (ParseTree) children.get("relativePath");
         document = processFileName(fileName);
         assert Objects.equals(children.get("otherChildren"), "doc()//");
-        processRelativePath(relativePath);
-
+        Set<Node> results = new LinkedHashSet<>();
+        results = processRelativePath(relativePath);
+        System.out.println("Root Results");
+        System.out.println(results);
+        if (results != null) {
+            document = XMLParser.convertResultsToDOM(results);
+        }
     }
 
     public Document processFileName(ParseTree tree) {
@@ -110,7 +115,7 @@ public class Engine {
         return XMLParser.parseXML(filePath);
     }
 
-    public void processRelativePath(ParseTree tree) throws ParserConfigurationException {
+    public Set<Node> processRelativePath(ParseTree tree) throws ParserConfigurationException {
         System.out.println("processRelativePath: " + tree.getText());
         Map<String, Object> children = getChildren(tree);
         Set<Node> results = new LinkedHashSet<>();
@@ -120,14 +125,14 @@ public class Engine {
             List<ParseTree> pathFilters = (List<ParseTree>) children.get("pathFilter");
             processRelativePath(relativePath);
             for (ParseTree pathFilter : pathFilters) {
-                results = processPathFilter(pathFilter);
-                if (results == null) {
-                    // do nothing
-                    continue;
+                Set<Node> results_ = processPathFilter(pathFilter);
+                if (results_ == null) {
+                    return null;
                 }
-                if (!results.isEmpty()) {
-                    document = XMLParser.convertResultsToDOM(results);
-                }
+//                if (!results.isEmpty()) {
+//                    document = XMLParser.convertResultsToDOM(results);
+//                }
+                results.addAll(results_);
 //                else {
 //                    throw new NotImplementedException("There are no results in processRelativePath!");
 //                }
@@ -137,17 +142,26 @@ public class Engine {
             ParseTree rpLeaf = (ParseTree) children.get("rpLeaf");
             if ("text()".equals(relativePath.getText())) {
                 processRpLeaf(rpLeaf);
+                return null;
             } else {
-                processRelativePath(relativePath);
+                Set<Node> results_ = processRelativePath(relativePath);
+                if (results_ != null) {
+                    results.addAll(results_);
+                }
             }
         } else if (children.containsKey("relativePath")) {
             ParseTree relativePath = (ParseTree) children.get("relativePath");
             // processSingleRelativePath(relativePath);
         } else if (children.containsKey("rpLeaf")) {
+            boolean tmp = processTagName;
             processRpLeaf((ParseTree) children.get("rpLeaf"));
+            if (tmp != processTagName) {
+                return null;
+            }
         } else {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
+        return results;
     }
 
     public void processSingleRelativePath(ParseTree tree) {
@@ -237,7 +251,7 @@ public class Engine {
             }
 
         } else if (children.containsKey("relativePath")) {
-            processRelativePath((ParseTree) children.get("relativePath"));
+            results.addAll(processRelativePath((ParseTree) children.get("relativePath")));
         } else if (children.containsKey("stringConstant")) {
             processStringConstant((ParseTree) children.get("stringConstant"));
         } else {
