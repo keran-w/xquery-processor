@@ -1,5 +1,5 @@
-// Generated from /Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/XPathGrammar.g4 by ANTLR 4.13.1
-package edu.ucsd.xmlqueryprocessor.antlr4;
+// Generated from /Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/xpath/XPathGrammar.g4 by ANTLR 4.13.1
+package edu.ucsd.xmlqueryprocessor.antlr4.xpath;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**

@@ -1,7 +1,7 @@
 package edu.ucsd.xmlqueryprocessor.parser;
 
-import edu.ucsd.xmlqueryprocessor.antlr4.XPathGrammarLexer;
-import edu.ucsd.xmlqueryprocessor.antlr4.XPathGrammarParser;
+import edu.ucsd.xmlqueryprocessor.antlr4.xpath.XPathGrammarLexer;
+import edu.ucsd.xmlqueryprocessor.antlr4.xpath.XPathGrammarParser;
 import edu.ucsd.xmlqueryprocessor.util.TreeUtil;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
