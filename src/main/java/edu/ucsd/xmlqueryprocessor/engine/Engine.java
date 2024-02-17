@@ -22,11 +22,6 @@ public class Engine {
 
     private boolean inequalityFlag = false;
 
-    public Engine(String fileDirectory) {
-        this.fileDirectory = fileDirectory;
-        this.outputFileDirectory = null;
-    }
-
     public Engine(String fileDirectory, String outputFileDirectory) {
         reset();
         this.fileDirectory = fileDirectory;
@@ -39,21 +34,6 @@ public class Engine {
         ruleNames = null;
         processTagName = false;
         pathFilterPrefix = null;
-    }
-
-    public Node process(String query) throws ParserConfigurationException {
-        reset();
-        XPathParser parser = new XPathParser(query);
-        ParseTree parseTree = parser.getTree();
-        ruleNames = parser.getRuleNames();
-        processRoot(parseTree);
-        return document.getDocumentElement();
-    }
-
-    public Set<Node> process(Set<Node> nodes, ParseTree relativePath) throws ParserConfigurationException {
-        reset();
-        document = XMLParser.convertResultsToDOM(nodes);
-        return processRelativePath(relativePath);
     }
 
     public void process(String query, String fileName) throws ParserConfigurationException {
@@ -102,11 +82,6 @@ public class Engine {
         return childrenKeyMap;
     }
 
-    /**
-     * Function [[ap]]A: process the root node of the tree
-     *
-     * @param tree, the root node of the tree
-     */
 
     public void processRoot(ParseTree tree) throws ParserConfigurationException {
 
@@ -116,8 +91,7 @@ public class Engine {
         ParseTree relativePath = (ParseTree) children.get("relativePath");
         document = processFileName(fileName);
         assert Objects.equals(children.get("otherChildren"), "doc()//");
-        Set<Node> results = new LinkedHashSet<>();
-        results = processRelativePath(relativePath);
+        Set<Node> results = processRelativePath(relativePath);
         if (results != null) {
             document = XMLParser.convertResultsToDOM(results);
         }
@@ -164,7 +138,7 @@ public class Engine {
                 }
             }
         } else if (children.containsKey("relativePath")) {
-            ParseTree relativePath = (ParseTree) children.get("relativePath");
+
         } else if (children.containsKey("rpLeaf")) {
             boolean tmp = processTagName;
             processRpLeaf((ParseTree) children.get("rpLeaf"));
@@ -178,13 +152,14 @@ public class Engine {
         return results;
     }
 
+
     public void processRpLeaf(ParseTree tree) {
         Map<String, Object> children = getChildren(tree);
         children.forEach((ruleName, child) -> {
             if ("tagName".equals(ruleName)) {
                 processTagName((ParseTree) child);
             } else if (".".equals(ruleName) || "otherChildren".equals(ruleName)) {
-                // do nothing
+
             } else {
                 throw new NotImplementedException("processRpLeaf has not implemented " + ruleName);
             }
