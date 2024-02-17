@@ -51,22 +51,19 @@ absolutePath
 
 
 relativePath
-    : rpLeaf
-    | relativePath '[' pathFilter ']'
-    | '(' relativePath ')'
-    | rpLeaf ',' relativePath
-    | rpLeaf '/' relativePath
-    | rpLeaf '//' relativePath
-    ;
-
-rpLeaf
-    : tagName
+     : tagName
     | '*'
     | '.'
     | '..'
     | 'text()'
-    | '@' attName
+    | attName
+    | relativePath '[' pathFilter ']'
+    | '(' relativePath ')'
+    | relativePath ',' relativePath
+    | relativePath '/' relativePath
+    | relativePath '//' relativePath
     ;
+
 
 pathFilter
     : relativePath
@@ -74,7 +71,7 @@ pathFilter
     | relativePath 'eq' relativePath
     | relativePath '==' relativePath
     | relativePath 'is' relativePath
-    // | relativePath ' = ' stringConstant
+    | relativePath '=' stringConstant
     | '(' pathFilter ')'
     | pathFilter 'and' pathFilter
     | pathFilter 'or' pathFilter
@@ -84,7 +81,7 @@ pathFilter
 var: '$' NAME;
 fileName: STRING;
 tagName: NAME;
-attName: NAME;
+attName: '@' NAME;
 stringConstant: STRING;
 
 NAME: [a-zA-Z_][a-zA-Z_0-9]*;
