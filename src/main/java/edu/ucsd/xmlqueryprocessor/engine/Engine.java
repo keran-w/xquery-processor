@@ -39,7 +39,7 @@ public class Engine {
     public void process(String query, String fileName) throws ParserConfigurationException {
         reset();
         XPathParser parser = new XPathParser(query);
-        ParseTree parseTree = parser.getParseTree();
+        ParseTree parseTree = parser.getTree();
         ruleNames = parser.getRuleNames();
         processRoot(parseTree);
         System.out.println("dumpDocument EOF");
@@ -132,13 +132,7 @@ public class Engine {
                 if (results_ == null) {
                     return null;
                 }
-//                if (!results.isEmpty()) {
-//                    document = XMLParser.convertResultsToDOM(results);
-//                }
                 results_2.addAll(results_);
-//                else {
-//                    throw new NotImplementedException("There are no results in processRelativePath!");
-//                }
             }
             System.out.println("\tRelativePath: " + relativePath.getText());
             System.out.println("\tResults_1: " + results_1);
@@ -176,11 +170,6 @@ public class Engine {
             throw new NotImplementedException("processRelativePath has not implemented " + tree.getText());
         }
         return results;
-    }
-
-    public void processSingleRelativePath(ParseTree tree) {
-        System.out.println("processSingleRelativePath: " + tree.getText());
-        document = XMLParser.checkIfChildNodeExists(document, tree.getText());
     }
 
     public void processRpLeaf(ParseTree tree) {
