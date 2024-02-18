@@ -15,7 +15,7 @@ import java.util.*;
 
 public class XMLParser {
 
-    public static Set<Node> getByNodeNameHelper(Node root, String targetNodeName) {
+    public static Set<Node> getNodeByNameAllLevels(Node root, String targetNodeName) {
         Set<Node> results = new LinkedHashSet<>();
         Queue<Node> queue = new LinkedList<>();
         queue.add(root);
@@ -32,13 +32,24 @@ public class XMLParser {
         return results;
     }
 
+    public static Set<Node> getNodeByNameNextLevel(Node root, String targetNodeName) {
+        Set<Node> results = new LinkedHashSet<>();
+        for (int i = 0; i < root.getChildNodes().getLength(); i++) {
+            Node node = root.getChildNodes().item(i);
+            if (targetNodeName.equals(node.getNodeName())) {
+                results.add(node);
+            }
+        }
+        return results;
+    }
+
     public static Document getByNodeName(Document document, String targetNodeName) {
         try {
             if (document == null) {
                 return null;
             }
             Node root = document.getDocumentElement();
-            Set<Node> results = getByNodeNameHelper(root, targetNodeName);
+            Set<Node> results = getNodeByNameAllLevels(root, targetNodeName);
             return convertResultsToDOM(results);
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,7 +68,7 @@ public class XMLParser {
                 String tagName = node.getNodeName();
 
                 List<String> nodeNameList = new ArrayList<>();
-                for (Node n : getByNodeNameHelper(node, left)) {
+                for (Node n : getNodeByNameAllLevels(node, left)) {
                     nodeNameList.add(n.getTextContent());
                 }
 
