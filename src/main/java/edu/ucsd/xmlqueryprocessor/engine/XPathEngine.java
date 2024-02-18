@@ -102,6 +102,7 @@ public class XPathEngine {
                     // relativePath ',' relativePath
                     // relativePath '/' relativePath
                     // relativePath '//' relativePath
+                    // TODO: Implement ',' operator
                     assert "/".equals(op) || "//".equals(op);
                     String nxtOp = relativePath.getChild(1).getText();
                     ParseTree left = relativePath.getChild(0);
@@ -149,6 +150,7 @@ public class XPathEngine {
             default:
                 if (leafSymbol.startsWith("@")) {
                     // attName
+                    // TODO: Implement attribute name, @attrName == /attrValue/text()
                     throw new NotImplementedException("processRPLeaf: attribute not implemented");
                 } else {
                     // tagName
@@ -223,6 +225,9 @@ public class XPathEngine {
             case "eq":
                 // relativePath '=' relativePath
                 // relativePath 'eq' relativePath
+                // Length of the left and right sets should be equal
+                // After sorting the sets, the elements should be equal
+                // Check node.isEqualNode() / node.isEqualNode() methods
                 // TODO: Implement equality for checking if the content of the nodes are equal
                 throw new NotImplementedException("processPathFilter: 'eq' not implemented");
             case "==":

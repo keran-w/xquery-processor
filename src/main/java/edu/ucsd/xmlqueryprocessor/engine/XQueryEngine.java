@@ -285,10 +285,12 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         switch (op) {
             case "=":
             case "eq":
-            case "==":
-            case "is":
                 // xquery '=' xquery
                 // xquery 'eq' xquery
+                // TODO: implement comparison content of nodes, similar to XPathEngine
+                throw new NotImplementedException("processCond: " + op + " not implemented");
+            case "==":
+            case "is":
                 // xquery '==' xquery
                 // xquery 'is' xquery
                 Set<Node> leftSet = processXQuery(left, varHashMap);
@@ -307,7 +309,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                         return false;
                     }
                 }
-                // TODO: implement comparison of nodes, similar to XPathEngine
+                // TODO: implement comparison reference of nodes, similar to XPathEngine
                 throw new NotImplementedException("processCond: " + op + " not implemented");
             case "and":
                 // cond 'and' cond
