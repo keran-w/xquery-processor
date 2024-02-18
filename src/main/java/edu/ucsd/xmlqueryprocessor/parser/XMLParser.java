@@ -7,7 +7,6 @@ import org.w3c.dom.Node;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -106,8 +105,6 @@ public class XMLParser {
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
-            System.out.println("Indent: " + OutputKeys.INDENT);
-            System.out.println("Standalone: " + OutputKeys.STANDALONE);
             transformer.setOutputProperty("indent", "yes");
             transformer.setOutputProperty("standalone", "yes");
             transformer.setOutputProperty("omit-xml-declaration", "yes");
