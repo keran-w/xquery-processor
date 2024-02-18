@@ -23,12 +23,6 @@ public interface XPathGrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitRelativePath(XPathGrammarParser.RelativePathContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link XPathGrammarParser#rpLeaf}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitRpLeaf(XPathGrammarParser.RpLeafContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link XPathGrammarParser#pathFilter}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
