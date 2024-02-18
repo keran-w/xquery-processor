@@ -10,6 +10,8 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
+
 public class XPathEngine {
 
     private final String fileDirectory;
@@ -18,21 +20,23 @@ public class XPathEngine {
         this.fileDirectory = fileDirectory;
     }
 
-//    public static void main(String[] args) {
-//        final String SAMPLE_QUERY_1 = "doc(\"j_caesar.xml\")//ACT//SCENE/*/../..";
-//        final String SAMPLE_QUERY_2 = "doc(\"j_caesar.xml\")//SCENE[SPEECH/SPEAKER/text() = \"CAESAR\"]";
-//        String sample = SAMPLE_QUERY_2;
-//        System.out.println("SAMPLE_QUERY: " + sample);
-//        XPathEngine engine = new XPathEngine("data/");
-//        Set<Node> results = engine.process(sample);
-//        System.out.println("Results: " + results);
-//    }
-
-
-    private static Set<Node> createSet(Node... nodes) {
-        return new LinkedHashSet<>(Set.of(nodes));
+    public static void main(String[] args) {
+        final String SAMPLE_QUERY_1 = "doc(\"j_caesar.xml\")//ACT/TITLE/text()";
+        final String SAMPLE_QUERY_2 = "doc(\"j_caesar.xml\")//SCENE[SPEECH/SPEAKER/text() = \"CAESAR\"]";
+        String sample = SAMPLE_QUERY_2;
+        System.out.println("SAMPLE_QUERY: " + sample);
+        XPathEngine engine = new XPathEngine("data/");
+        Set<Node> results = engine.process(sample);
+        try {
+            Document document = XMLParser.convertResultsToDOM(results);
+            dumpDocument(document, "m1-output.xml");
+        } catch (Exception ignored) {
+        }
     }
 
+    static Set<Node> createSet(Node... nodes) {
+        return new LinkedHashSet<>(Set.of(nodes));
+    }
 
     public Set<Node> process(String query) {
         XPathParser parser = new XPathParser(query);
@@ -54,10 +58,10 @@ public class XPathEngine {
         switch (op) {
             case "/":
                 // 'doc' '(' fileName ')' '/' relativePath
-                return processAbsolutePath(filename, relativePath);
+                return processAbsolutePath(filename, relativePath, "/");
             case "//":
                 // 'doc' '(' fileName ')' '//' relativePath
-                return processAbsolutePath(filename, relativePath);
+                return processAbsolutePath(filename, relativePath, "//");
             default:
                 throw new IllegalArgumentException("Invalid operator: " + op);
         }
@@ -70,44 +74,44 @@ public class XPathEngine {
         return document.getDocumentElement();
     }
 
-    public Set<Node> processAbsolutePath(String filename, ParseTree relativePath) {
+    public Set<Node> processAbsolutePath(String filename, ParseTree relativePath, String op) {
         Node root = processFileName(filename);
-        return processRelativePath(Set.of(root), relativePath);
+        return processRelativePath(Set.of(root), relativePath, op);
     }
 
-    public Set<Node> processRelativePath(Set<Node> nodes, ParseTree relativePath) {
+    public Set<Node> processRelativePath(Set<Node> nodes, ParseTree relativePath, String op) {
         int childCount = relativePath.getChildCount();
         switch (childCount) {
             case 1:
                 // tagName | '*' | '.' | '..' | 'text()' | attName
                 String leafSymbol = relativePath.getChild(0).getText();
-                return processRPLeaf(nodes, leafSymbol);
+                return processRPLeaf(nodes, leafSymbol, op);
 
             case 3:
                 if ("(".equals(relativePath.getChild(0).getText())) {
                     // '(' relativePath ')'
-                    return processRelativePath(nodes, relativePath.getChild(1));
+                    return processRelativePath(nodes, relativePath.getChild(1), op);
                 } else {
                     // relativePath ',' relativePath
                     // relativePath '/' relativePath
                     // relativePath '//' relativePath
-                    String op = relativePath.getChild(1).getText();
+                    String nxtOp = relativePath.getChild(1).getText();
                     ParseTree left = relativePath.getChild(0);
                     ParseTree right = relativePath.getChild(2);
-                    return processRelativePath(processRelativePath(nodes, left), right);
+                    return processRelativePath(processRelativePath(nodes, left, op), right, nxtOp);
                 }
 
             case 4:
                 // relativePath '[' pathFilter ']'
                 ParseTree subRelativePath = relativePath.getChild(0);
                 ParseTree pathFilter = relativePath.getChild(2);
-                return processPathFilter(processRelativePath(nodes, subRelativePath), pathFilter, false);
+                return processPathFilter(processRelativePath(nodes, subRelativePath, op), pathFilter, false);
             default:
                 throw new IllegalArgumentException("Invalid relative path: " + relativePath.getText());
         }
     }
 
-    public Set<Node> processRPLeaf(Set<Node> nodes, String leafSymbol) {
+    public Set<Node> processRPLeaf(Set<Node> nodes, String leafSymbol, String op) {
         Set<Node> results = createSet();
         switch (leafSymbol) {
             case "*":
@@ -128,7 +132,12 @@ public class XPathEngine {
                 }
                 return results;
             case "text()":
-                throw new UnsupportedOperationException("Text node not supported yet");
+                // get text node for each node
+                for (Node node : nodes) {
+                    System.out.println("Node: " + node.getNodeName() + ", " + node.getTextContent());
+                    results.add(node.getFirstChild());
+                }
+                return results;
             default:
                 if (leafSymbol.startsWith("@")) {
                     // attName
@@ -136,7 +145,12 @@ public class XPathEngine {
                 } else {
                     // tagName
                     for (Node node : nodes) {
-                        results.addAll(XMLParser.getByNodeNameHelper(node, leafSymbol));
+                        if ("/".equals(op)) {
+                            results.addAll(XMLParser.getNodeByNameNextLevel(node, leafSymbol));
+                        } else if ("//".equals(op)) {
+                            results.addAll(XMLParser.getNodeByNameAllLevels(node, leafSymbol));
+                        }
+
                     }
                     return results;
                 }
@@ -148,7 +162,7 @@ public class XPathEngine {
         switch (childCount) {
             case 1:
                 // relativePath
-                return processRelativePath(nodes, pathFilter.getChild(0));
+                return processRelativePath(nodes, pathFilter.getChild(0), null);
 
             case 2:
                 // 'not' pathFilter
@@ -185,8 +199,8 @@ public class XPathEngine {
             return processPathFilterEquality(nodes, left.getText(), target, false);
         }
 
-        Set<Node> leftResults = processRelativePath(nodes, left);
-        Set<Node> rightResults = processRelativePath(nodes, right);
+        Set<Node> leftResults = processRelativePath(nodes, left, null);
+        Set<Node> rightResults = processRelativePath(nodes, right, null);
         switch (op) {
             case "=":
             case "eq":
