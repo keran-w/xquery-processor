@@ -3,135 +3,166 @@ package edu.ucsd.xmlqueryprocessor.engine;
 import edu.ucsd.xmlqueryprocessor.antlr4.xquery.XQueryGrammarBaseVisitor;
 import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Node;
 
 import java.util.*;
-import java.util.function.Function;
 
 public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
     XQueryParser parser;
 
+    String FILE_DIRECTORY = "data/";
+
+    XPathEngine xpathEngine = new XPathEngine(FILE_DIRECTORY);
+
+    private HashMap<String, Set<Node>> varHashMap = new HashMap<>();
 
     public XQueryEngine() {
 
     }
 
     public static void main(String[] args) {
-        final String SAMPLE_QUERY_1 = "<result>\n" + "  {\n" + "    for $a in doc(\"j_caesar.xml\")//ACT, $sc in $a//SCENE, $sp in $sc/SPEECH\n" + "    where $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "    return \n" + "    <who>{$sp/SPEAKER/text()}</who>,\n" + "    <when>{\n" + "      <act>{$a/TITLE/text()}</act>,\n" + "      <scene>{$sc/TITLE/text()}</scene>}\n" + "    </when>\n" + "  }\n" + "</result> " ;
+        final String SAMPLE_QUERY_1 = "<result>\n" + "  {\n" + "    for $a in doc(\"j_caesar.xml\")//ACT, $sc in $a//SCENE, $sp in $sc/SPEECH\n" + "    where $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "    return \n" + "    <who>{$sp/SPEAKER/text()}</who>,\n" + "    <when>{\n" + "      <act>{$a/TITLE/text()}</act>,\n" + "      <scene>{$sc/TITLE/text()}</scene>}\n" + "    </when>\n" + "  }\n" + "</result> ";
         System.out.println("SAMPLE_QUERY: " + SAMPLE_QUERY_1);
         XQueryEngine engine = new XQueryEngine();
         engine.process(SAMPLE_QUERY_1);
-
     }
 
-    private int getDepth(ParseTree node) {
-        int depth = 0;
-        ParseTree current = node;
-        while (current.getParent() != null) {
-            depth++;
-            current = current.getParent();
-        }
-        return depth;
-    }
-
-    public Set<Node> processByKey(String key, Function<ParseTree, Set<Node>> processor, Map<String, List<Object>> children) {
-        List<Object> items = children.getOrDefault(key, Collections.emptyList());
-        Set<Node> result = new LinkedHashSet<>();
-        for (Object item : items) {
-            Set<Node> nodes = processor.apply((ParseTree) item);
-            result.addAll(nodes);
-        }
-        return result;
-    }
-
-    public void process(String query) {
-        System.out.println("Start processing");
-        parser = new XQueryParser(query);
-        ParseTree root = parser.getTree();
-        Map<String, List<Object>> children = parser.getChildren(root);
-        System.out.println(children.keySet());
-        Set<Node> result = processByKey("xquery", this::processXQuery, children);
-    }
-
-    private Map<String, List<Object>> getChildrenWithLogging(ParseTree tree, String name) {
+    /*
+     * Decorator function to print out the name of the node being processed
+     */
+    private Map<String, List<Object>> getChildren(ParseTree tree, String name) {
         System.out.println("Processing " + name + ": " + tree.getText());
         Map<String, List<Object>> children = parser.getChildren(tree);
-        System.out.println(children.keySet());
+        System.out.println("\tChildren key set" + children.keySet());
+        for (String key : children.keySet()) {
+            if (Objects.equals(key, "otherChildren")) {
+                System.out.println("\t\t" + key + ": " + children.get(key));
+            } else {
+                for (Object child : children.get(key)) {
+                    System.out.println("\t\t" + key + ": " + ((ParseTree) child).getText());
+                }
+            }
+        }
+
         return children;
     }
 
-    public Set<Node> processXQuery(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "xquery");
-        Set<Node> result = new LinkedHashSet<>();
-        processByKey("xquery", this::processXQuery, children);
-        processByKey("forClause", this::processForClause, children);
-        processByKey("whereClause", this::processWhereClause, children);
-        processByKey("returnClause", this::processReturnClause, children);
-        processByKey("letClause", this::processLetClause, children);
-        processByKey("relativePath", this::processRelativePath, children);
-        processByKey("var", this::processVar, children);
-        return result;
+    public void process(String query) {
+        parser = new XQueryParser(query);
+        ParseTree root = parser.getTree();
+        // Map<String, List<Object>> children = getChildren(root, "root");
+        Set<Node> result = processXQuery(root);
     }
 
-    public Set<Node> processWhereClause(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "whereClause");
-        Set<Node> result = new LinkedHashSet<>();
-        processByKey("cond", this::processCond, children);
-        return result;
+    public Set<Node> processXQuery(ParseTree root) {
+        Map<String, List<Object>> children = getChildren(root, "xquery");
+        int childCount = root.getChildCount();
+        if (childCount == 1) {
+            // var
+            // stringConstant
+            // absolutePath
+            throw new NotImplementedException("processXQuery: var, stringConstant, absolutePath not implemented");
+        } else if (children.containsKey("forClause")) {
+            // forClause letClause? whereClause? returnClause
+            throw new NotImplementedException("processXQuery: forClause not implemented");
+        } else if (children.containsKey("letClause")) {
+            // letClause xquery
+            throw new NotImplementedException("processXQuery: letClause not implemented");
+        } else if (children.containsKey("tagName")) {
+            // '<' tagName '>' '{' xquery '}' '</' tagName '>'
+            throw new NotImplementedException("processXQuery: tagName not implemented");
+        } else {
+            assert childCount == 3;
+            if ("(".equals(root.getChild(0).getText())) {
+                // '(' xquery ')'
+                throw new NotImplementedException("processXQuery: '(' xquery ')' not implemented");
+            } else {
+                if (children.containsKey("relativePath")) {
+                    // xquery '/' relativePath
+                    // xquery '//' relativePath
+                    throw new NotImplementedException("processXQuery: xquery '/' relativePath, xquery '//' relativePath not implemented");
+                } else {
+                    // xquery ',' xquery
+                    throw new NotImplementedException("processXQuery: xquery ',' xquery not implemented");
+                }
+            }
+        }
     }
 
     public Set<Node> processForClause(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "forClause");
-        Set<Node> result = new LinkedHashSet<>();
-        processByKey("forClause", this::processForClause, children);
-        processByKey("xquery", this::processXQuery, children);
-        processByKey("var", this::processVar, children);
-        return result;
-    }
-
-    public Set<Node> processReturnClause(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "returnClause");
-        Set<Node> result = new LinkedHashSet<>();
-        processByKey("xquery", this::processXQuery, children);
-        return result;
+        Map<String, List<Object>> children = getChildren(root, "forClause");
+        int childCount = root.getChildCount();
+        switch (childCount) {
+            case 4:
+                // 'for' var 'in' xquery
+                throw new NotImplementedException("processForClause: 'for' var 'in' xquery not implemented");
+            case 5:
+                // forClause ',' var 'in' xquery
+                throw new NotImplementedException("processForClause: forClause ',' var 'in' xquery not implemented");
+            default:
+                throw new NotImplementedException("processForClause: invalid child count");
+        }
     }
 
     public Set<Node> processLetClause(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "letClause");
-        Set<Node> result = new LinkedHashSet<>();
-        return result;
+        Map<String, List<Object>> children = getChildren(root, "letClause");
+        int childCount = root.getChildCount();
+        switch (childCount) {
+            case 4:
+                // 'let' var ':=' xquery
+                throw new NotImplementedException("processLetClause: 'let' var ':=' xquery not implemented");
+            case 5:
+                // letClause ',' var ':=' xquery
+                throw new NotImplementedException("processLetClause: letClause ',' var ':=' xquery not implemented");
+            default:
+                throw new NotImplementedException("processLetClause: invalid child count");
+        }
+    }
+
+    public Set<Node> processWhereClause(ParseTree root) {
+        // 'where' cond
+        Map<String, List<Object>> children = getChildren(root, "whereClause");
+        ParseTree cond = (ParseTree) children.get("cond").get(1);
+        throw new NotImplementedException("processWhereClause: cond not implemented");
+    }
+
+    public Set<Node> processReturnClause(ParseTree root) {
+        // 'return' xquery
+        Map<String, List<Object>> children = getChildren(root, "returnClause");
+        ParseTree xquery = (ParseTree) children.get("xquery").get(1);
+        throw new NotImplementedException("processReturnClause: xquery not implemented");
     }
 
     public Set<Node> processCond(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "cond");
-        Set<Node> result = new LinkedHashSet<>();
-        return result;
+        Map<String, List<Object>> children = getChildren(root, "cond");
+        int childCount = root.getChildCount();
+        switch (childCount) {
+            case 2:
+                // 'not' cond
+                throw new NotImplementedException("processCond: 'not' cond not implemented");
+            case 3:
+                // xquery '=' xquery
+                // xquery 'eq' xquery
+                // xquery '==' xquery
+                // xquery 'is' xquery
+                // '(' cond ')'
+                // cond 'and' cond
+                // cond 'or' cond
+                throw new NotImplementedException("processCond: cond 'and' cond, cond 'or' cond not implemented");
+            case 4:
+                // 'empty' '(' xquery ')'
+                throw new NotImplementedException("processCond: 'empty' '(' xquery ')' not implemented");
+            case 6:
+                // 'some' var 'in' xquery 'satisfies' cond
+                ParseTree var = root.getChild(1);
+                ParseTree xquery = root.getChild(3);
+                ParseTree subCond = root.getChild(5);
+                throw new NotImplementedException("processCond: 'some' var 'in' xquery 'satisfies' cond not implemented");
+            default:
+                throw new NotImplementedException("processCond: invalid child count");
+        }
     }
 
-    public Set<Node> processRelativePath(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "relativePath");
-        Set<Node> result = new LinkedHashSet<>();
-        processByKey("tagName", this::processTagName, children);
-        processByKey("rpLeaf", this::processRpLeaf, children);
-        return result;
-    }
-
-    public Set<Node> processVar(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "var");
-        Set<Node> result = new LinkedHashSet<>();
-        return result;
-    }
-
-    public Set<Node> processTagName(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "tagName");
-        Set<Node> result = new LinkedHashSet<>();
-        return result;
-    }
-
-    public Set<Node> processRpLeaf(ParseTree root) {
-        Map<String, List<Object>> children = getChildrenWithLogging(root, "rpLeaf");
-        Set<Node> result = new LinkedHashSet<>();
-        return result;
-    }
 
 }
