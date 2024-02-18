@@ -43,6 +43,7 @@ public class XPathEngine {
     }
 
     public Set<Node> process(String query) {
+        System.out.println("Processing query: " + query);
         XPathParser parser = new XPathParser(query);
         ParseTree parseTree = parser.getTree();
         return processAbsolutePath(parseTree);
@@ -219,12 +220,15 @@ public class XPathEngine {
             case "eq":
                 // relativePath '=' relativePath
                 // relativePath 'eq' relativePath
-                throw new UnsupportedOperationException("Equality =/eq comparison not supported yet");
+                // TODO: Implement equality for checking if the content of the nodes are equal
+                throw new UnsupportedOperationException("Equality not supported yet");
             case "==":
             case "is":
                 // relativePath '==' relativePath
                 // relativePath 'is' relativePath
-                throw new UnsupportedOperationException("Equality ==/is comparison not supported yet");
+                Set<Node> leftIsResults = processRelativePath(Set.of(node), left, "/");
+                Set<Node> rightIsResults = processRelativePath(Set.of(node), right, "/");
+                return leftIsResults.equals(rightIsResults) ^ isNot;
             case "and":
                 // pathFilter 'and' pathFilter
                 boolean andLeft = processPathFilter(node, left, false);
