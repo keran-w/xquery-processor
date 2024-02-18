@@ -111,9 +111,11 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 for (HashMap<String, Node> varHashMap : varHashMapList) {
                     Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
                     for (Node node : xqueryResult) {
-                        newVarHashMapList.add(new HashMap<String, Node>(varHashMap) {{
-                            put(varName, node);
-                        }});
+                        newVarHashMapList.add(new HashMap<>(varHashMap) {
+                            {
+                                put(varName, node);
+                            }
+                        });
                     }
 
                 }
@@ -121,7 +123,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 varHashMapList.addAll(newVarHashMapList);
                 return;
             default:
-                throw new NotImplementedException("processForClause: invalid child count");
+                throw new IllegalArgumentException("processForClause: invalid child count");
         }
     }
 
@@ -140,7 +142,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 // absolutePath
                 return xpathEngine.processAbsolutePath(tree.getChild(0));
             } else {
-                throw new NotImplementedException("processXQuery: invalid key: " + children.keySet());
+                throw new IllegalArgumentException("processXQuery: invalid key: " + children.keySet());
             }
 
         } else if (children.containsKey("forClause")) {
@@ -163,7 +165,8 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
             return res;
         } else if (children.containsKey("letClause")) {
             // letClause xquery
-            throw new NotImplementedException("processXQuery: letClause not implemented");
+            // TODO: call processLetClause and processXQuery
+            throw new NotImplementedException("processXQuery: letClause xquery not implemented");
         } else if (children.containsKey("tagName")) {
             // '<' tagName '>' '{' xquery '}' '</' tagName '>'
             String tagName = tree.getChild(1).getText();
@@ -179,7 +182,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
             assert childCount == 3;
             if ("(".equals(tree.getChild(0).getText())) {
                 // '(' xquery ')'
-                throw new NotImplementedException("processXQuery: '(' xquery ')' not implemented");
+                return processXQuery(tree.getChild(1), varHashMap);
             } else {
                 if (children.containsKey("relativePath")) {
                     // xquery '/' relativePath
@@ -201,17 +204,20 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
     }
 
     public Set<Node> processLetClause(ParseTree tree) {
+        // TODO: modify the return type and params of processLetClause
         Map<String, List<Object>> children = getChildren(tree, "letClause");
         int childCount = tree.getChildCount();
         switch (childCount) {
             case 4:
                 // 'let' var ':=' xquery
+                // TODO: implement 'let' var ':=' xquery, which assigns the result of xquery to var
                 throw new NotImplementedException("processLetClause: 'let' var ':=' xquery not implemented");
             case 5:
                 // letClause ',' var ':=' xquery
+                // TODO: implement letClause ',' var ':=' xquery, similar to 'let' var ':=' xquery, but with multiple assignments
                 throw new NotImplementedException("processLetClause: letClause ',' var ':=' xquery not implemented");
             default:
-                throw new NotImplementedException("processLetClause: invalid child count");
+                throw new IllegalArgumentException("processLetClause: invalid child count");
         }
     }
 
@@ -243,7 +249,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         switch (childCount) {
             case 2:
                 // 'not' cond
-                throw new NotImplementedException("processCond: 'not' cond not implemented");
+                return !processCond(tree.getChild(1), varHashMap);
             case 3:
                 if ("(".equals(tree.getChild(0).getText())) {
                     // '(' cond ')'
@@ -260,15 +266,18 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 }
             case 4:
                 // 'empty' '(' xquery ')'
+                // TODO: implement 'empty' '(' xquery ')', which checks if the result of xquery is empty
                 throw new NotImplementedException("processCond: 'empty' '(' xquery ')' not implemented");
             case 6:
                 // 'some' var 'in' xquery 'satisfies' cond
                 ParseTree var = tree.getChild(1);
                 ParseTree xquery = tree.getChild(3);
                 ParseTree subCond = tree.getChild(5);
+                Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
+                // TODO: implement 'some' var 'in' xquery 'satisfies' cond, which checks if there exists a var in xquery such that cond is true
                 throw new NotImplementedException("processCond: 'some' var 'in' xquery 'satisfies' cond not implemented");
             default:
-                throw new NotImplementedException("processCond: invalid child count");
+                throw new IllegalArgumentException("processCond: invalid child count");
         }
     }
 
@@ -298,7 +307,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                         return false;
                     }
                 }
-
+                // TODO: implement comparison of nodes, similar to XPathEngine
                 throw new NotImplementedException("processCond: " + op + " not implemented");
             case "and":
                 // cond 'and' cond
@@ -307,7 +316,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 // cond 'or' cond
                 return processCond(left, varHashMap) || processCond(right, varHashMap);
             default:
-                throw new NotImplementedException("processCond: invalid op: " + op);
+                throw new IllegalArgumentException("processCond: invalid op: " + op);
         }
     }
 

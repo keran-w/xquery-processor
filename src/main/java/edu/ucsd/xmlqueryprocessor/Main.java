@@ -23,9 +23,9 @@ public class Main {
 
     private static void readProcessQueries(XPathEngine engine, String queryFilePath) {
         try {
-            List<String> lines = Files.readAllLines(Paths.get(queryFilePath));
+            List < String > lines = Files.readAllLines(Paths.get(queryFilePath));
             int queryCounter = 0;
-            for (String query : lines) {
+            for (String query: lines) {
                 queryCounter++;
                 if (queryCounter > 10) {
                     continue;

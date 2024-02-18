@@ -43,7 +43,8 @@ public abstract class BaseParser<T extends Parser> {
         }
     }
 
-    public Map<String, List<Object>> getChildren(ParseTree tree) {
+    public Map<String,
+            List<Object>> getChildren(ParseTree tree) {
         Map<String, List<Object>> childrenKeyMap = new HashMap<>();
         List<Object> otherChildren = new ArrayList<>();
 
@@ -51,7 +52,7 @@ public abstract class BaseParser<T extends Parser> {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
 
-//            System.out.println("\tChild: " + child.getText() + ", " + ruleName);
+            //            System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
             } else {

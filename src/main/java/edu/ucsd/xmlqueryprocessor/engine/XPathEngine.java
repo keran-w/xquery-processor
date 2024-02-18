@@ -3,6 +3,7 @@ package edu.ucsd.xmlqueryprocessor.engine;
 import edu.ucsd.xmlqueryprocessor.parser.XMLParser;
 import edu.ucsd.xmlqueryprocessor.parser.XPathParser;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
@@ -85,7 +86,7 @@ public class XPathEngine {
     }
 
     public Set<Node> processRelativePath(Set<Node> nodes, ParseTree relativePath, String op) {
-//        System.out.println("Processing relative path: " + relativePath.getText());
+        //        System.out.println("Processing relative path: " + relativePath.getText());
         int childCount = relativePath.getChildCount();
         switch (childCount) {
             case 1:
@@ -113,6 +114,7 @@ public class XPathEngine {
                 ParseTree subRelativePath = relativePath.getChild(0);
                 ParseTree pathFilter = relativePath.getChild(2);
                 return processPathFilter(processRelativePath(nodes, subRelativePath, op), pathFilter);
+
             default:
                 throw new IllegalArgumentException("Invalid relative path: " + relativePath.getText());
         }
@@ -147,7 +149,7 @@ public class XPathEngine {
             default:
                 if (leafSymbol.startsWith("@")) {
                     // attName
-                    throw new UnsupportedOperationException("Attribute name not supported yet");
+                    throw new NotImplementedException("processRPLeaf: attribute not implemented");
                 } else {
                     // tagName
                     for (Node node : nodes) {
@@ -222,7 +224,7 @@ public class XPathEngine {
                 // relativePath '=' relativePath
                 // relativePath 'eq' relativePath
                 // TODO: Implement equality for checking if the content of the nodes are equal
-                throw new UnsupportedOperationException("Equality not supported yet");
+                throw new NotImplementedException("processPathFilter: 'eq' not implemented");
             case "==":
             case "is":
                 // relativePath '==' relativePath
