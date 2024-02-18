@@ -101,6 +101,7 @@ public class XPathEngine {
                     // relativePath ',' relativePath
                     // relativePath '/' relativePath
                     // relativePath '//' relativePath
+                    assert "/".equals(op) || "//".equals(op);
                     String nxtOp = relativePath.getChild(1).getText();
                     ParseTree left = relativePath.getChild(0);
                     ParseTree right = relativePath.getChild(2);
@@ -171,7 +172,7 @@ public class XPathEngine {
 
             case 2:
                 // 'not' pathFilter
-                return processPathFilter(node, pathFilter.getChild(1), !isNot);
+                return !processPathFilter(node, pathFilter.getChild(1), isNot);
 
             case 3:
                 if ("(".equals(pathFilter.getChild(0).getText())) {
