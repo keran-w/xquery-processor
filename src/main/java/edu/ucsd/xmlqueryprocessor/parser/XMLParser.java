@@ -3,7 +3,6 @@ package edu.ucsd.xmlqueryprocessor.parser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -12,49 +11,13 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class XMLParser {
 
-//    public static void main(String[] args) {
-//        Document document = XMLParser.parseXML("/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/output/result2.xml");
-////        traverseBFS(document);
-//        assert document != null;
-//        Document res = processEquality(document, "SPEAKER", "CAESAR");
-//        dumpDocument(res, "/Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/output/result2_where.xml");
-//    }
-
-    public static void traverseBFS(Document document) {
-        if (document == null) {
-            return;
-        }
-        Node root = document.getDocumentElement();
-        Queue<Node> queue = new LinkedList<>();
-        queue.add(root);
-
-        List<Node> results = new ArrayList<>();
-
-        while (!queue.isEmpty()) {
-            Node node = queue.poll();
-            String tagName = node.getNodeName();
-            String textContent = node.getTextContent();
-            if ("SPEAKER".equals(tagName) && "CAESAR".equals(textContent)) {
-                Node parent = node.getParentNode();
-                while (!"SPEECH".equals(parent.getNodeName())) {
-                    parent = parent.getParentNode();
-                }
-                results.add(parent);
-            }
-
-            for (int i = 0; i < node.getChildNodes().getLength(); i++) {
-                queue.add(node.getChildNodes().item(i));
-            }
-        }
-
-    }
-
-    public static Set<Node> getByNodeNameHelper(Node root, String targetNodeName) {
+    public static Set<Node> getNodeByNameAllLevels(Node root, String targetNodeName) {
         Set<Node> results = new LinkedHashSet<>();
         Queue<Node> queue = new LinkedList<>();
         queue.add(root);
@@ -71,13 +34,25 @@ public class XMLParser {
         return results;
     }
 
+
+    public static Set<Node> getNodeByNameNextLevel(Node root, String targetNodeName) {
+        Set<Node> results = new LinkedHashSet<>();
+        for (int i = 0; i < root.getChildNodes().getLength(); i++) {
+            Node node = root.getChildNodes().item(i);
+            if (targetNodeName.equals(node.getNodeName())) {
+                results.add(node);
+            }
+        }
+        return results;
+    }
+
     public static Document getByNodeName(Document document, String targetNodeName) {
         try {
             if (document == null) {
                 return null;
             }
             Node root = document.getDocumentElement();
-            Set<Node> results = getByNodeNameHelper(root, targetNodeName);
+            Set<Node> results = getNodeByNameAllLevels(root, targetNodeName);
             return convertResultsToDOM(results);
         } catch (Exception e) {
             e.printStackTrace();
@@ -96,7 +71,7 @@ public class XMLParser {
                 String tagName = node.getNodeName();
 
                 List<String> nodeNameList = new ArrayList<>();
-                for (Node n : getByNodeNameHelper(node, left)) {
+                for (Node n : getNodeByNameAllLevels(node, left)) {
                     nodeNameList.add(n.getTextContent());
                 }
 
@@ -104,64 +79,8 @@ public class XMLParser {
                     System.out.println("\t\tFound a match: " + node);
                     results.add(node);
                 }
-
             }
-            // System.out.println(results);
             return results;
-            // return convertResultsToDOM(results);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static boolean nodeExistsDFS(Node root, String targetNodeName) {
-        NodeList childNodes = root.getChildNodes();
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            Node node = childNodes.item(i);
-            if (node.getNodeName().equals(targetNodeName)) {
-                return true;
-            }
-            if (nodeExistsDFS(node, targetNodeName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static Document checkIfChildNodeExists(Document document, String targetNodeName) {
-        System.out.println("Checking if child node exists: " + targetNodeName);
-
-        try {
-            Set<Node> results = new LinkedHashSet<>();
-            Node root = document.getDocumentElement();
-            for (int i = 0; i < root.getChildNodes().getLength(); i++) {
-                Node node = root.getChildNodes().item(i);
-                if (node.getNodeName().equals(targetNodeName)) {
-                    results.add(node);
-                }
-                if (nodeExistsDFS(node, targetNodeName)) {
-                    results.add(node);
-                }
-            }
-            return convertResultsToDOM(results);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-
-    public static String printDocument(Document doc) {
-        try {
-            TransformerFactory tf = TransformerFactory.newInstance();
-            Transformer transformer = tf.newTransformer();
-            StringWriter writer = new StringWriter();
-            transformer.transform(new DOMSource(doc), new StreamResult(writer));
-
-            // The XML string
-            return writer.getBuffer().toString();
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -186,10 +105,16 @@ public class XMLParser {
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty("indent", "yes");
+            transformer.setOutputProperty("standalone", "yes");
             transformer.setOutputProperty("omit-xml-declaration", "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             DOMSource source = new DOMSource(document);
             StreamResult streamResult = new StreamResult(filePath);
             transformer.transform(source, streamResult);
+            String content = new String(Files.readAllBytes(Paths.get(filePath)));
+            content = content.replaceAll("(?m)^[ \t]*\r?\n", "");
+            Files.write(Paths.get(filePath), content.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -207,5 +132,4 @@ public class XMLParser {
             return null;
         }
     }
-
 }
