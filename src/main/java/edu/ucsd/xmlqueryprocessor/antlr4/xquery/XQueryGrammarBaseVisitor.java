@@ -74,13 +74,6 @@ public class XQueryGrammarBaseVisitor<T> extends AbstractParseTreeVisitor<T> imp
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitRpLeaf(XQueryGrammarParser.RpLeafContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitPathFilter(XQueryGrammarParser.PathFilterContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}

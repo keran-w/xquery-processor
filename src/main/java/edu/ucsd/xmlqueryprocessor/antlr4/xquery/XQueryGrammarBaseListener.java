@@ -113,18 +113,6 @@ public class XQueryGrammarBaseListener implements XQueryGrammarListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterRpLeaf(XQueryGrammarParser.RpLeafContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitRpLeaf(XQueryGrammarParser.RpLeafContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterPathFilter(XQueryGrammarParser.PathFilterContext ctx) { }
 	/**
 	 * {@inheritDoc}

@@ -88,16 +88,6 @@ public interface XQueryGrammarListener extends ParseTreeListener {
 	 */
 	void exitRelativePath(XQueryGrammarParser.RelativePathContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link XQueryGrammarParser#rpLeaf}.
-	 * @param ctx the parse tree
-	 */
-	void enterRpLeaf(XQueryGrammarParser.RpLeafContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link XQueryGrammarParser#rpLeaf}.
-	 * @param ctx the parse tree
-	 */
-	void exitRpLeaf(XQueryGrammarParser.RpLeafContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link XQueryGrammarParser#pathFilter}.
 	 * @param ctx the parse tree
 	 */
