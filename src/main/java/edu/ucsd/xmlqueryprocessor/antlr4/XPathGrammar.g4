@@ -37,8 +37,10 @@ absolutePath
 
 relativePath
     : rpLeaf
-    | relativePath '[' pathFilter ']'
-    | '(' relativePath ')'
+    | relativePath '[' pathFilter ']' '/' relativePath
+    | relativePath '[' pathFilter ']' '//' relativePath
+    | '(' relativePath ')' '/' relativePath
+    | '(' relativePath ')' '//' relativePath
     | rpLeaf ',' relativePath
     | rpLeaf '/' relativePath
     | rpLeaf '//' relativePath
