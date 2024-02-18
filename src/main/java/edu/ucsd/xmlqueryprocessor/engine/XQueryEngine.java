@@ -16,15 +16,14 @@ import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
 import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 
 public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
+    private final String outputDirectory;
+    private final XPathEngine xpathEngine;
     XQueryParser parser;
-
-    String FILE_DIRECTORY = "data/";
-
-    XPathEngine xpathEngine = new XPathEngine(FILE_DIRECTORY);
-
     private Document document;
 
-    public XQueryEngine() {
+    public XQueryEngine(String fileDirectory, String outputDirectory) {
+        this.outputDirectory = outputDirectory;
+        xpathEngine = new XPathEngine(fileDirectory);
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -34,25 +33,27 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
     }
 
     public static void main(String[] args) {
-        final String SAMPLE_QUERY_1 = "<result>\n" + "  {\n" + "    for $a in doc(\"j_caesar.xml\")//ACT, $sc in $a//SCENE, $sp in $sc/SPEECH\n" + "    where $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "    return \n" + "    <who>{$sp/SPEAKER/text()}</who>,\n" + "    <when>{\n" + "      <act>{$a/TITLE/text()}</act>,\n" + "      <scene>{$sc/TITLE/text()}</scene>}\n" + "    </when>\n" + "  }\n" + "</result> ";
-        final String SAMPLE_QUERY_2 = "<result>{ \n" + "for $s in doc(\"j_caesar.xml\")//SPEAKER\n" + "return <speaks>{<who>{$s/text()}</who>,\n" + " for $a in doc(\"j_caesar.xml\")//ACT\n" + " where some $s1 in $a//SPEAKER satisfies $s1 eq $s\n" + " return <when>{$a/TITLE/text()}</when>}\n" + " </speaks>\n" + "}</result> ";
-        String sample = SAMPLE_QUERY_2;
-        System.out.println("SAMPLE_QUERY: " + sample);
-        XQueryEngine engine = new XQueryEngine();
-        engine.process(sample);
+        final String SAMPLE_QUERY_1 = "<result>{\n" + "    for\n" + "        $a in doc(\"j_caesar.xml\")//ACT, \n" + "        $sc in $a//SCENE, \n" + "        $sp in $sc/SPEECH\n" + "\n" + "    where \n" + "        $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "\n" + "    return \n" + "        <who>{\n" + "            $sp/SPEAKER/text()\n" + "        }</who>,\n" + "\n" + "        <when>{\n" + "            <act>{$a/TITLE/text()}</act>,\n" + "            <scene>{$sc/TITLE/text()}</scene>\n" + "        }</when>\n" + "}</result> ";
+        final String SAMPLE_QUERY_2 = "<result>{\n" + "    for\n" + "        $s in doc(\"j_caesar.xml\")//SPEAKER\n" + "    return \n" + "        <speaks>{\n" + "            <who>{\n" + "                $s/text()\n" + "            }</who>,\n" + "\n" + "            for \n" + "                $a in doc(\"j_caesar.xml\")//ACT\n" + "            where \n" + "                some $s1 in $a//SPEAKER satisfies $s1 eq $s\n" + "            return <when>{\n" + "                $a/TITLE/text()\n" + "            }</when>\n" + "        }</speaks>\n" + "}</result> ";
+
+        XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
+        engine.evaluate(SAMPLE_QUERY_1, "result1.xml");
+        System.out.println("--------------------------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------");
+        engine.evaluate(SAMPLE_QUERY_2, "result2.xml");
     }
 
     /* Decorator function to print out the name of the node being processed */
     private Map<String, List<Object>> getChildren(ParseTree tree, String name) {
-        System.out.println("Processing " + name + ": " + tree.getText());
+        // System.out.println("Processing " + name + ": " + tree.getText());
         Map<String, List<Object>> children = parser.getChildren(tree);
-        System.out.println("\tChildren key set: " + children.keySet());
+        // System.out.println("\tChildren key set: " + children.keySet());
         for (String key : children.keySet()) {
             if (Objects.equals(key, "otherChildren")) {
-                System.out.println("\t\t" + key + ": " + children.get(key));
+                // System.out.println("\t\t" + key + ": " + children.get(key));
             } else {
                 for (Object child : children.get(key)) {
-                    System.out.println("\t\t" + key + ": " + ((ParseTree) child).getText());
+                    // System.out.println("\t\t" + key + ": " + ((ParseTree) child).getText());
                 }
             }
         }
@@ -60,10 +61,8 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         return children;
     }
 
-    public void process(String query) {
-        parser = new XQueryParser(query);
-        ParseTree tree = parser.getTree();
-        Set<Node> result = processXQuery(tree, new HashMap<>());
+    public void evaluate(String query, String outputFileName) {
+        Set<Node> result = process(query);
         if (result.size() != 1) {
             Element root = document.createElement("result");
             for (Node node : result) {
@@ -73,10 +72,16 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         } else {
             document.appendChild(document.importNode(result.iterator().next(), true));
         }
-
-        dumpDocument(document, "m2-output.xml");
+        String outputFilePath = outputDirectory + outputFileName;
+        dumpDocument(document, outputFilePath);
     }
 
+    public Set<Node> process(String query) {
+        System.out.println("Processing query: \n" + query);
+        parser = new XQueryParser(query);
+        ParseTree tree = parser.getTree();
+        return processXQuery(tree, new HashMap<>());
+    }
 
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         Map<String, List<Object>> children = getChildren(tree, "forClause");
@@ -104,7 +109,8 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 xquery = tree.getChild(4);
                 List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
                 for (HashMap<String, Node> varHashMap : varHashMapList) {
-                    for (Node node : processXQuery(xquery, varHashMap)) {
+                    Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
+                    for (Node node : xqueryResult) {
                         newVarHashMapList.add(new HashMap<String, Node>(varHashMap) {{
                             put(varName, node);
                         }});
@@ -119,8 +125,6 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         }
     }
 
-//    List<HashMap<String, Node>> varHashMapList
-
     public Set<Node> processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = getChildren(tree, "xquery");
         int childCount = tree.getChildCount();
@@ -131,7 +135,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 return createSet(varHashMap.get(tree.getText()));
             } else if (children.containsKey("stringConstant")) {
                 // stringConstant
-                throw new NotImplementedException("processXQuery: stringConstant not implemented");
+                return createSet(document.createTextNode(tree.getText()));
             } else if (children.containsKey("absolutePath")) {
                 // absolutePath
                 return xpathEngine.processAbsolutePath(tree.getChild(0));
@@ -143,14 +147,12 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
             // forClause letClause? whereClause? returnClause
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
             processForClause((ParseTree) children.get("forClause").get(0), varHashMapList);
-            System.out.println("varHashMapList: " + varHashMapList);
 
             if (children.containsKey("letClause")) {
                 processLetClause((ParseTree) children.get("letClause").get(0));
             }
             if (children.containsKey("whereClause")) {
-                // TODO: process whereClause with equality
-                // processWhereClause((ParseTree) children.get("whereClause").get(0));
+                processWhereClause((ParseTree) children.get("whereClause").get(0), varHashMapList);
             }
 
             ParseTree returnClause = (ParseTree) children.get("returnClause").get(0);
@@ -167,7 +169,6 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
             String tagName = tree.getChild(1).getText();
             ParseTree xquery = tree.getChild(4);
             Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
-            System.out.println("tagName: " + tagName);
 
             Node newNode = document.createElement(tagName);
             for (Node node : xqueryResult) {
@@ -183,10 +184,10 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 if (children.containsKey("relativePath")) {
                     // xquery '/' relativePath
                     // xquery '//' relativePath
-                    String xqueryOp = tree.getChild(0).getText();
-                    String relativePath = tree.getChild(2).getText();
-                    System.out.println("processXQuery: " + xqueryOp + " / " + relativePath);
-                    return xpathEngine.processRelativePath(processXQuery(tree.getChild(0), varHashMap), tree.getChild(2), xqueryOp);
+                    String xqueryOp = tree.getChild(1).getText();
+                    ParseTree xquery = tree.getChild(0);
+                    ParseTree relativePath = tree.getChild(2);
+                    return xpathEngine.processRelativePath(processXQuery(xquery, varHashMap), relativePath, xqueryOp);
 
                 } else {
                     // xquery ',' xquery
@@ -214,11 +215,19 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         }
     }
 
-    public Set<Node> processWhereClause(ParseTree tree) {
+    public void processWhereClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         // 'where' cond
         Map<String, List<Object>> children = getChildren(tree, "whereClause");
-        ParseTree cond = (ParseTree) children.get("cond").get(1);
-        throw new NotImplementedException("processWhereClause: cond not implemented");
+        ParseTree cond = tree.getChild(1);
+        List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
+        for (HashMap<String, Node> varHashMap : varHashMapList) {
+            if (processCond(cond, varHashMap)) {
+                newVarHashMapList.add(varHashMap);
+            }
+        }
+
+        varHashMapList.clear();
+        varHashMapList.addAll(newVarHashMapList);
     }
 
     public Set<Node> processReturnClause(ParseTree tree, HashMap<String, Node> varHashMap) {
@@ -228,7 +237,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         return processXQuery(xquery, varHashMap);
     }
 
-    public Set<Node> processCond(ParseTree tree) {
+    public boolean processCond(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = getChildren(tree, "cond");
         int childCount = tree.getChildCount();
         switch (childCount) {
@@ -236,14 +245,19 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 // 'not' cond
                 throw new NotImplementedException("processCond: 'not' cond not implemented");
             case 3:
-                // xquery '=' xquery
-                // xquery 'eq' xquery
-                // xquery '==' xquery
-                // xquery 'is' xquery
-                // '(' cond ')'
-                // cond 'and' cond
-                // cond 'or' cond
-                throw new NotImplementedException("processCond: cond 'and' cond, cond 'or' cond not implemented");
+                if ("(".equals(tree.getChild(0).getText())) {
+                    // '(' cond ')'
+                    processCond(tree.getChild(1), varHashMap);
+                } else {
+                    // xquery '=' xquery
+                    // xquery 'eq' xquery
+                    // xquery '==' xquery
+                    // xquery 'is' xquery
+                    // cond 'and' cond
+                    // cond 'or' cond
+                    String op = tree.getChild(1).getText();
+                    return processCond(tree.getChild(0), tree.getChild(2), op, varHashMap);
+                }
             case 4:
                 // 'empty' '(' xquery ')'
                 throw new NotImplementedException("processCond: 'empty' '(' xquery ')' not implemented");
@@ -258,5 +272,43 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         }
     }
 
+    public boolean processCond(ParseTree left, ParseTree right, String op, HashMap<String, Node> varHashMap) {
+        switch (op) {
+            case "=":
+            case "eq":
+            case "==":
+            case "is":
+                // xquery '=' xquery
+                // xquery 'eq' xquery
+                // xquery '==' xquery
+                // xquery 'is' xquery
+                Set<Node> leftSet = processXQuery(left, varHashMap);
+                Set<Node> rightSet = processXQuery(right, varHashMap);
+                if (rightSet.size() == 1) {
+                    String rightNodeStr = rightSet.iterator().next().getTextContent();
+                    if ("\"".equals(rightNodeStr.substring(0, 1))) {
+                        // xquery '=' stringConstant
+                        rightNodeStr = rightNodeStr.substring(1, rightNodeStr.length() - 1);
+                        for (Node leftNode : leftSet) {
+                            String leftNodeStr = leftNode.getTextContent();
+                            if (leftNodeStr.equals(rightNodeStr)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+
+                throw new NotImplementedException("processCond: " + op + " not implemented");
+            case "and":
+                // cond 'and' cond
+                return processCond(left, varHashMap) && processCond(right, varHashMap);
+            case "or":
+                // cond 'or' cond
+                return processCond(left, varHashMap) || processCond(right, varHashMap);
+            default:
+                throw new NotImplementedException("processCond: invalid op: " + op);
+        }
+    }
 
 }
