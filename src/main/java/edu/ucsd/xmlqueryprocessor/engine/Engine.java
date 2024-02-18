@@ -82,9 +82,7 @@ public class Engine {
         return childrenKeyMap;
     }
 
-
     public void processRoot(ParseTree tree) throws ParserConfigurationException {
-
 
         Map<String, Object> children = getChildren(tree);
         ParseTree fileName = (ParseTree) children.get("fileName");
@@ -151,7 +149,6 @@ public class Engine {
         }
         return results;
     }
-
 
     public void processRpLeaf(ParseTree tree) {
         Map<String, Object> children = getChildren(tree);
@@ -243,7 +240,6 @@ public class Engine {
         results.add(((ParseTree) children.get("rpLeaf")).getText());
         return results;
     }
-
 
     public Set<Node> processEquality(ParseTree tree) {
         Map<String, Object> children = getChildren(tree);
