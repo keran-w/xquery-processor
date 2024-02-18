@@ -18,13 +18,15 @@ public class XPathEngine {
         this.fileDirectory = fileDirectory;
     }
 
-    public static void main(String[] args) {
-        final String SAMPLE_QUERY_1 = "doc(\"j_caesar.xml\")//ACT//SCENE/*/..";
-        System.out.println("SAMPLE_QUERY: " + SAMPLE_QUERY_1);
-        XPathEngine engine = new XPathEngine("data/");
-        Set<Node> results = engine.process(SAMPLE_QUERY_1);
-        System.out.println("Results: " + results);
-    }
+//    public static void main(String[] args) {
+//        final String SAMPLE_QUERY_1 = "doc(\"j_caesar.xml\")//ACT//SCENE/*/../..";
+//        final String SAMPLE_QUERY_2 = "doc(\"j_caesar.xml\")//SCENE[SPEECH/SPEAKER/text() = \"CAESAR\"]";
+//        String sample = SAMPLE_QUERY_2;
+//        System.out.println("SAMPLE_QUERY: " + sample);
+//        XPathEngine engine = new XPathEngine("data/");
+//        Set<Node> results = engine.process(sample);
+//        System.out.println("Results: " + results);
+//    }
 
 
     private static Set<Node> createSet(Node... nodes) {
@@ -109,7 +111,13 @@ public class XPathEngine {
         Set<Node> results = createSet();
         switch (leafSymbol) {
             case "*":
-                return nodes;
+                // get all children for each node
+                for (Node node : nodes) {
+                    for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+                        results.add(node.getChildNodes().item(i));
+                    }
+                }
+                return results;
             case ".":
                 // get self node for each node
                 return nodes;
