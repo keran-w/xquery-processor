@@ -15,27 +15,31 @@ import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 public class XPathEngine {
 
     private final String fileDirectory;
+    private final String outputDirectory;
 
     public XPathEngine(String fileDirectory) {
         this.fileDirectory = fileDirectory;
+        this.outputDirectory = null;
     }
 
-    public static void main(String[] args) {
-        final String SAMPLE_QUERY_1 = "doc(\"j_caesar.xml\")//ACT/TITLE/text()";
-        final String SAMPLE_QUERY_2 = "doc(\"j_caesar.xml\")//SCENE[SPEECH/SPEAKER/text() = \"CAESAR\"]";
-        String sample = SAMPLE_QUERY_2;
-        System.out.println("SAMPLE_QUERY: " + sample);
-        XPathEngine engine = new XPathEngine("data/");
-        Set<Node> results = engine.process(sample);
-        try {
-            Document document = XMLParser.convertResultsToDOM(results);
-            dumpDocument(document, "m1-output.xml");
-        } catch (Exception ignored) {
-        }
+    public XPathEngine(String fileDirectory, String outputDirectory) {
+        this.fileDirectory = fileDirectory;
+        this.outputDirectory = outputDirectory;
     }
 
     static Set<Node> createSet(Node... nodes) {
         return new LinkedHashSet<>(Set.of(nodes));
+    }
+
+    public void evaluate(String query, String outputFileName) {
+        Set<Node> results = process(query);
+        try {
+            Document document = XMLParser.convertResultsToDOM(results);
+            String outputFilePath = outputDirectory + outputFileName;
+            dumpDocument(document, outputFilePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Set<Node> process(String query) {
@@ -80,6 +84,7 @@ public class XPathEngine {
     }
 
     public Set<Node> processRelativePath(Set<Node> nodes, ParseTree relativePath, String op) {
+//        System.out.println("Processing relative path: " + relativePath.getText());
         int childCount = relativePath.getChildCount();
         switch (childCount) {
             case 1:
@@ -105,7 +110,7 @@ public class XPathEngine {
                 // relativePath '[' pathFilter ']'
                 ParseTree subRelativePath = relativePath.getChild(0);
                 ParseTree pathFilter = relativePath.getChild(2);
-                return processPathFilter(processRelativePath(nodes, subRelativePath, op), pathFilter, false);
+                return processPathFilter(processRelativePath(nodes, subRelativePath, op), pathFilter);
             default:
                 throw new IllegalArgumentException("Invalid relative path: " + relativePath.getText());
         }
@@ -134,7 +139,6 @@ public class XPathEngine {
             case "text()":
                 // get text node for each node
                 for (Node node : nodes) {
-                    System.out.println("Node: " + node.getNodeName() + ", " + node.getTextContent());
                     results.add(node.getFirstChild());
                 }
                 return results;
@@ -157,21 +161,21 @@ public class XPathEngine {
         }
     }
 
-    public Set<Node> processPathFilter(Set<Node> nodes, ParseTree pathFilter, boolean isNot) {
+    public boolean processPathFilter(Node node, ParseTree pathFilter, boolean isNot) {
         int childCount = pathFilter.getChildCount();
         switch (childCount) {
             case 1:
                 // relativePath
-                return processRelativePath(nodes, pathFilter.getChild(0), null);
+                return !processRelativePath(Set.of(node), pathFilter.getChild(0), "/").isEmpty();
 
             case 2:
                 // 'not' pathFilter
-                return processPathFilter(nodes, pathFilter.getChild(1), !isNot);
+                return processPathFilter(node, pathFilter.getChild(1), !isNot);
 
             case 3:
                 if ("(".equals(pathFilter.getChild(0).getText())) {
                     // '(' pathFilter ')'
-                    return processPathFilter(nodes, pathFilter.getChild(1), isNot);
+                    return processPathFilter(node, pathFilter.getChild(1), isNot);
                 } else {
                     // relativePath '=' relativePath
                     // relativePath 'eq' relativePath
@@ -183,7 +187,7 @@ public class XPathEngine {
                     String op = pathFilter.getChild(1).getText();
                     ParseTree left = pathFilter.getChild(0);
                     ParseTree right = pathFilter.getChild(2);
-                    return processPathFilter(nodes, left, right, op, isNot);
+                    return processPathFilter(node, left, right, op, isNot);
                 }
 
             default:
@@ -191,16 +195,25 @@ public class XPathEngine {
         }
     }
 
-    public Set<Node> processPathFilter(Set<Node> nodes, ParseTree left, ParseTree right, String op, boolean isNot) {
+    public Set<Node> processPathFilter(Set<Node> nodes, ParseTree pathFilter) {
+        Set<Node> results = new LinkedHashSet<>();
+        for (Node node : nodes) {
+            if (processPathFilter(node, pathFilter, false)) {
+                results.add(node);
+            }
+        }
+        return results;
+    }
+
+    public boolean processPathFilter(Node node, ParseTree left, ParseTree right, String op, boolean isNot) {
+        op = op.trim();
         String rightText = right.getText();
         if (Objects.equals(op, "=") && "\"".equals(rightText.substring(0, 1))) {
             // relativePath '=' stringConstant
-            String target = right.getChild(1).getText().substring(1, rightText.length() - 1);
-            return processPathFilterEquality(nodes, left.getText(), target, false);
+            String target = rightText.substring(1, rightText.length() - 1);
+            return processPathFilterEquality(node, left, target, isNot);
         }
 
-        Set<Node> leftResults = processRelativePath(nodes, left, null);
-        Set<Node> rightResults = processRelativePath(nodes, right, null);
         switch (op) {
             case "=":
             case "eq":
@@ -214,18 +227,29 @@ public class XPathEngine {
                 throw new UnsupportedOperationException("Equality ==/is comparison not supported yet");
             case "and":
                 // pathFilter 'and' pathFilter
-                leftResults.retainAll(rightResults);
-                return leftResults;
+                boolean andLeft = processPathFilter(node, left, false);
+                boolean andRight = processPathFilter(node, right, false);
+                return andLeft && andRight ^ isNot;
             case "or":
                 // pathFilter 'or' pathFilter
-                leftResults.addAll(rightResults);
-                return leftResults;
+                boolean orLeft = processPathFilter(node, left, false);
+                boolean orRight = processPathFilter(node, right, false);
+                return orLeft || orRight ^ isNot;
             default:
                 throw new IllegalArgumentException("Invalid operator: " + op);
         }
     }
 
-    public Set<Node> processPathFilterEquality(Set<Node> nodes, String left, String target, boolean isNot) {
-        throw new UnsupportedOperationException("Equality = comparison not supported yet");
+    public boolean processPathFilterEquality(Node node, ParseTree left, String target, boolean isNot) {
+        Set<Node> leftResults = processRelativePath(Set.of(node), left, "/");
+        boolean foundFlag = false;
+
+        for (Node leftNode : leftResults) {
+            if (target.equals(leftNode.getTextContent())) {
+                foundFlag = true;
+                break;
+            }
+        }
+        return foundFlag ^ isNot;
     }
 }
