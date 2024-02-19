@@ -285,14 +285,6 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         switch (op) {
             case "=":
             case "eq":
-                // xquery '=' xquery
-                // xquery 'eq' xquery
-                // TODO: implement comparison content of nodes, similar to XPathEngine
-                throw new NotImplementedException("processCond: " + op + " not implemented");
-            case "==":
-            case "is":
-                // xquery '==' xquery
-                // xquery 'is' xquery
                 Set<Node> leftSet = processXQuery(left, varHashMap);
                 Set<Node> rightSet = processXQuery(right, varHashMap);
                 if (rightSet.size() == 1) {
@@ -309,6 +301,14 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                         return false;
                     }
                 }
+                // xquery '=' xquery
+                // xquery 'eq' xquery
+                // TODO: implement comparison content of nodes, similar to XPathEngine
+                throw new NotImplementedException("processCond: " + op + " not implemented");
+            case "==":
+            case "is":
+                // xquery '==' xquery
+                // xquery 'is' xquery
                 // TODO: implement comparison reference of nodes, similar to XPathEngine
                 throw new NotImplementedException("processCond: " + op + " not implemented");
             case "and":
@@ -321,5 +321,4 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 throw new IllegalArgumentException("processCond: invalid op: " + op);
         }
     }
-
 }
