@@ -1,6 +1,5 @@
 package edu.ucsd.xmlqueryprocessor.engine;
 
-import edu.ucsd.xmlqueryprocessor.antlr4.xquery.XQueryGrammarBaseVisitor;
 import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.NotImplementedException;
@@ -18,7 +17,7 @@ import java.util.*;
 import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
 import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 
-public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
+public class XQueryEngine {
     private final String outputDirectory;
     private final XPathEngine xpathEngine;
     XQueryParser parser;
