@@ -50,15 +50,13 @@ public class XQueryEngine {
             e.printStackTrace();
         }
 
-        XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
         for (int i = 0; i < queries.size(); i++) {
-            if (i != 1) {
-                continue;
-            }
+            XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
             System.out.println("Testing query " + (i + 1));
             System.out.println("Processing query: \n" + sampleQueries[i]);
             try {
                 engine.evaluate(queries.get(i), "result" + (i + 1) + ".xml");
+                System.out.println("Successfully processed query " + (i + 1) + "!");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -134,7 +132,7 @@ public class XQueryEngine {
 
 
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
-        Map<String, List<Object>> children = getChildren(tree, "forClause");
+        // Map<String, List<Object>> children = getChildren(tree, "forClause");
         int childCount = tree.getChildCount();
         String varName;
         ParseTree xquery;
@@ -214,7 +212,8 @@ public class XQueryEngine {
             return createSet(newNode);
         } else {
             assert childCount == 3;
-            if ("(".equals(tree.getChild(0).getText())) {
+            ;
+            if (tree.getChildCount() > 0 && "(".equals(tree.getChild(0).getText())) {
                 // '(' xquery ')'
                 return processXQuery(tree.getChild(1), varHashMap);
             } else {
@@ -228,6 +227,7 @@ public class XQueryEngine {
 
                 } else {
                     // xquery ',' xquery
+                    assert ",".equals(tree.getChild(1).getText());
                     Set<Node> left = processXQuery(tree.getChild(0), varHashMap);
                     Set<Node> right = processXQuery(tree.getChild(2), varHashMap);
                     left.addAll(right);
@@ -239,7 +239,7 @@ public class XQueryEngine {
 
     public Set<Node> processLetClause(ParseTree tree) {
         // TODO: modify the return type and params of processLetClause
-        Map<String, List<Object>> children = getChildren(tree, "letClause");
+        // Map<String, List<Object>> children = getChildren(tree, "letClause");
         int childCount = tree.getChildCount();
         switch (childCount) {
             case 4:
@@ -257,7 +257,7 @@ public class XQueryEngine {
 
     public void processWhereClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         // 'where' cond
-        Map<String, List<Object>> children = getChildren(tree, "whereClause");
+        // Map<String, List<Object>> children = getChildren(tree, "whereClause");
         ParseTree cond = tree.getChild(1);
         List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
         for (HashMap<String, Node> varHashMap : varHashMapList) {
@@ -272,13 +272,13 @@ public class XQueryEngine {
 
     public Set<Node> processReturnClause(ParseTree tree, HashMap<String, Node> varHashMap) {
         // 'return' xquery
-        Map<String, List<Object>> children = getChildren(tree, "returnClause");
+        // Map<String, List<Object>> children = getChildren(tree, "returnClause");
         ParseTree xquery = tree.getChild(1);
         return processXQuery(xquery, varHashMap);
     }
 
     public boolean processCond(ParseTree tree, HashMap<String, Node> varHashMap) {
-        Map<String, List<Object>> children = getChildren(tree, "cond");
+        // Map<String, List<Object>> children = getChildren(tree, "cond");
         int childCount = tree.getChildCount();
         switch (childCount) {
             case 1:
@@ -290,7 +290,7 @@ public class XQueryEngine {
             case 3:
                 if ("(".equals(tree.getChild(0).getText())) {
                     // '(' cond ')'
-                    processCond(tree.getChild(1), varHashMap);
+                    return processCond(tree.getChild(1), varHashMap);
                 } else {
                     // xquery '=' xquery
                     // xquery 'eq' xquery

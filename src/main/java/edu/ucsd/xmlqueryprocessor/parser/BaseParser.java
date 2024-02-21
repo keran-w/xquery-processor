@@ -43,8 +43,7 @@ public abstract class BaseParser<T extends Parser> {
         }
     }
 
-    public Map<String,
-            List<Object>> getChildren(ParseTree tree) {
+    public Map<String, List<Object>> getChildren(ParseTree tree) {
         Map<String, List<Object>> childrenKeyMap = new HashMap<>();
         List<Object> otherChildren = new ArrayList<>();
 
