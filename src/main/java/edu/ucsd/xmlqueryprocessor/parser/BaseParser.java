@@ -14,10 +14,28 @@ public abstract class BaseParser<T extends Parser> {
         parse(input);
     }
 
+    /**
+     * Create a lexer for the given charStream
+     * 
+     * @param charStream
+     * @return
+     */
     protected abstract Lexer createLexer(CharStream charStream);
 
+    /**
+     * Create a parser for the given tokens
+     * 
+     * @param tokens
+     * @return
+     */
     protected abstract T createParser(CommonTokenStream tokens);
 
+    /**
+     * Get the parse tree from the parser
+     * 
+     * @param parser
+     * @return
+     */
     protected abstract ParseTree getParseTree(T parser);
 
     private void parse(String input) {
@@ -43,16 +61,14 @@ public abstract class BaseParser<T extends Parser> {
         }
     }
 
-    public Map<String,
-            List<Object>> getChildren(ParseTree tree) {
-        Map<String, List<Object>> childrenKeyMap = new HashMap<>();
+    public Map<String, List<Object>> getChildren(ParseTree tree) {
+        Map<String, List<Object>> childrenKeyMap = new HashMap<>(5);
         List<Object> otherChildren = new ArrayList<>();
 
         for (int i = 0; i < tree.getChildCount(); i++) {
             ParseTree child = tree.getChild(i);
             String ruleName = getRuleName(child);
 
-            //            System.out.println("\tChild: " + child.getText() + ", " + ruleName);
             if (ruleName == null) {
                 otherChildren.add(child.getText().trim());
             } else {

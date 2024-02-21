@@ -32,7 +32,10 @@ returnClause
     ;
 
 cond
-    : xquery '=' xquery
+    : xquery
+    | xquery '=' xquery
+    
+    
     | xquery 'eq' xquery
     | xquery '==' xquery
     | xquery 'is' xquery

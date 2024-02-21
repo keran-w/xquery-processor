@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
+import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
 public class XPathEngine {
 
@@ -86,22 +87,22 @@ public class XPathEngine {
     }
 
     public Set<Node> processRelativePath(Set<Node> nodes, ParseTree relativePath, String op) {
-        //        System.out.println("Processing relative path: " + relativePath.getText());
         int childCount = relativePath.getChildCount();
         switch (childCount) {
             case 1:
                 // tagName | '*' | '.' | '..' | 'text()' | attName
                 String leafSymbol = relativePath.getChild(0).getText();
-                return processRPLeaf(nodes, leafSymbol, op);
+                return processRpLeaf(nodes, leafSymbol, op);
 
             case 3:
-                if ("(".equals(relativePath.getChild(0).getText())) {
+                if (LEFT_PARENTHESIS.equals(relativePath.getChild(0).getText())) {
                     // '(' relativePath ')'
                     return processRelativePath(nodes, relativePath.getChild(1), op);
                 } else {
                     // relativePath ',' relativePath
                     // relativePath '/' relativePath
                     // relativePath '//' relativePath
+                    // TODO: Implement ',' operator
                     assert "/".equals(op) || "//".equals(op);
                     String nxtOp = relativePath.getChild(1).getText();
                     ParseTree left = relativePath.getChild(0);
@@ -120,7 +121,7 @@ public class XPathEngine {
         }
     }
 
-    public Set<Node> processRPLeaf(Set<Node> nodes, String leafSymbol, String op) {
+    public Set<Node> processRpLeaf(Set<Node> nodes, String leafSymbol, String op) {
         Set<Node> results = createSet();
         switch (leafSymbol) {
             case "*":
@@ -147,8 +148,9 @@ public class XPathEngine {
                 }
                 return results;
             default:
-                if (leafSymbol.startsWith("@")) {
+                if (leafSymbol.startsWith(AT)) {
                     // attName
+                    // TODO: Implement attribute name, @attrName == /attrValue/text()
                     throw new NotImplementedException("processRPLeaf: attribute not implemented");
                 } else {
                     // tagName
@@ -177,7 +179,7 @@ public class XPathEngine {
                 return !processPathFilter(node, pathFilter.getChild(1));
 
             case 3:
-                if ("(".equals(pathFilter.getChild(0).getText())) {
+                if (LEFT_PARENTHESIS.equals(pathFilter.getChild(0).getText())) {
                     // '(' pathFilter ')'
                     return processPathFilter(node, pathFilter.getChild(1));
                 } else {
@@ -212,7 +214,7 @@ public class XPathEngine {
     public boolean processPathFilter(Node node, ParseTree left, ParseTree right, String op) {
         op = op.trim();
         String rightText = right.getText();
-        if (Objects.equals(op, "=") && "\"".equals(rightText.substring(0, 1))) {
+        if (Objects.equals(op, EQUALS) && QUOTE.equals(rightText.substring(0, 1))) {
             // relativePath '=' stringConstant
             String target = rightText.substring(1, rightText.length() - 1);
             return processPathFilterEquality(node, left, target);
@@ -223,6 +225,9 @@ public class XPathEngine {
             case "eq":
                 // relativePath '=' relativePath
                 // relativePath 'eq' relativePath
+                // Length of the left and right sets should be equal
+                // After sorting the sets, the elements should be equal
+                // Check node.isEqualNode() / node.isEqualNode() methods
                 // TODO: Implement equality for checking if the content of the nodes are equal
                 throw new NotImplementedException("processPathFilter: 'eq' not implemented");
             case "==":
