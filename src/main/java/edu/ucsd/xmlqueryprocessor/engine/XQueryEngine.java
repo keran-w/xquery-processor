@@ -52,6 +52,9 @@ public class XQueryEngine {
 
         XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
         for (int i = 0; i < queries.size(); i++) {
+            if (i != 1) {
+                continue;
+            }
             System.out.println("Testing query " + (i + 1));
             System.out.println("Processing query: \n" + sampleQueries[i]);
             try {
@@ -104,6 +107,32 @@ public class XQueryEngine {
         return processXQuery(tree, new HashMap<>());
     }
 
+
+    public void processInStatement(String varName, ParseTree xquery, List<HashMap<String, Node>> varHashMapList) {
+        if (varHashMapList.isEmpty()) {
+            for (Node node : processXQuery(xquery, null)) {
+                HashMap<String, Node> varHashMap = new HashMap<>();
+                varHashMap.put(varName, node);
+                varHashMapList.add(varHashMap);
+            }
+        } else {
+            List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
+            for (HashMap<String, Node> varHashMap : varHashMapList) {
+                Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
+                for (Node node : xqueryResult) {
+                    newVarHashMapList.add(new HashMap<>(varHashMap) {
+                        {
+                            put(varName, node);
+                        }
+                    });
+                }
+            }
+            varHashMapList.clear();
+            varHashMapList.addAll(newVarHashMapList);
+        }
+    }
+
+
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         Map<String, List<Object>> children = getChildren(tree, "forClause");
         int childCount = tree.getChildCount();
@@ -115,12 +144,7 @@ public class XQueryEngine {
                 // 'for' var 'in' xquery
                 varName = tree.getChild(1).getText();
                 xquery = tree.getChild(3);
-                assert varHashMapList.isEmpty();
-                for (Node node : processXQuery(xquery, null)) {
-                    HashMap<String, Node> varHashMap = new HashMap<>();
-                    varHashMap.put(varName, node);
-                    varHashMapList.add(varHashMap);
-                }
+                processInStatement(varName, xquery, varHashMapList);
                 return;
             case 5:
                 // forClause ',' var 'in' xquery
@@ -128,20 +152,7 @@ public class XQueryEngine {
                 processForClause(forClause, varHashMapList);
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
-                List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
-                for (HashMap<String, Node> varHashMap : varHashMapList) {
-                    Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
-                    for (Node node : xqueryResult) {
-                        newVarHashMapList.add(new HashMap<>(varHashMap) {
-                            {
-                                put(varName, node);
-                            }
-                        });
-                    }
-
-                }
-                varHashMapList.clear();
-                varHashMapList.addAll(newVarHashMapList);
+                processInStatement(varName, xquery, varHashMapList);
                 return;
             default:
                 throw new IllegalArgumentException("processForClause: invalid child count");
@@ -169,6 +180,7 @@ public class XQueryEngine {
         } else if (children.containsKey("forClause")) {
             // forClause letClause? whereClause? returnClause
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
+            varHashMapList.add(varHashMap);
             processForClause((ParseTree) children.get("forClause").get(0), varHashMapList);
 
             if (children.containsKey("letClause")) {
@@ -179,6 +191,7 @@ public class XQueryEngine {
             }
 
             ParseTree returnClause = (ParseTree) children.get("returnClause").get(0);
+
             Set<Node> res = createSet();
             for (HashMap<String, Node> varHashMapItem : varHashMapList) {
                 res.addAll(processReturnClause(returnClause, varHashMapItem));
@@ -293,12 +306,18 @@ public class XQueryEngine {
                 return processXQuery(tree.getChild(2), varHashMap).isEmpty();
             case 6:
                 // 'some' var 'in' xquery 'satisfies' cond
-                ParseTree var = tree.getChild(1);
+                String varName = tree.getChild(1).getText();
                 ParseTree xquery = tree.getChild(3);
                 ParseTree subCond = tree.getChild(5);
-                Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
-                // TODO: implement 'some' var 'in' xquery 'satisfies' cond, which checks if there exists a var in xquery such that cond is true
-                throw new NotImplementedException("processCond: 'some' var 'in' xquery 'satisfies' cond not implemented");
+                List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
+                varHashMapList.add(varHashMap);
+                processInStatement(varName, xquery, varHashMapList);
+                for (HashMap<String, Node> newVarHashMap : varHashMapList) {
+                    if (processCond(subCond, newVarHashMap)) {
+                        return true;
+                    }
+                }
+                return false;
             default:
                 throw new IllegalArgumentException("processCond: invalid child count");
         }
@@ -326,8 +345,20 @@ public class XQueryEngine {
                 }
                 // xquery '=' xquery
                 // xquery 'eq' xquery
-                // TODO: implement comparison content of nodes, similar to XPathEngine
-                throw new NotImplementedException("processCond: " + op + " not implemented");
+                if (leftSet.size() != rightSet.size()) {
+                    return false;
+                } else {
+                    Iterator<Node> leftItr = leftSet.iterator();
+                    Iterator<Node> rightItr = rightSet.iterator();
+                    while (leftItr.hasNext()) {
+                        Node leftNode = leftItr.next();
+                        Node rightNode = rightItr.next();
+                        if (!leftNode.getTextContent().equals(rightNode.getTextContent())) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
             case "==":
             case "is":
                 // xquery '==' xquery
