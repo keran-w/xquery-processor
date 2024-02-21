@@ -212,7 +212,6 @@ public class XQueryEngine {
             return createSet(newNode);
         } else {
             assert childCount == 3;
-            ;
             if (tree.getChildCount() > 0 && "(".equals(tree.getChild(0).getText())) {
                 // '(' xquery ')'
                 return processXQuery(tree.getChild(1), varHashMap);
@@ -281,9 +280,9 @@ public class XQueryEngine {
         // Map<String, List<Object>> children = getChildren(tree, "cond");
         int childCount = tree.getChildCount();
         switch (childCount) {
-            case 1:
-                // xquery
-                return !processXQuery(tree.getChild(0), varHashMap).isEmpty();
+//            case 1:
+//                // xquery
+//                return !processXQuery(tree.getChild(0), varHashMap).isEmpty();
             case 2:
                 // 'not' cond
                 return !processCond(tree.getChild(1), varHashMap);
