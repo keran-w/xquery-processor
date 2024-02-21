@@ -108,7 +108,7 @@ public class XMLParser {
             transformer.setOutputProperty("indent", "yes");
             transformer.setOutputProperty("standalone", "yes");
             transformer.setOutputProperty("omit-xml-declaration", "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
             DOMSource source = new DOMSource(document);
             StreamResult streamResult = new StreamResult(filePath);
             transformer.transform(source, streamResult);
