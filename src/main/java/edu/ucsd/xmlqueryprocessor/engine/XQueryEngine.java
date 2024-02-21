@@ -32,8 +32,9 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         final String SAMPLE_QUERY_1 = "<result>{\n" + "    for\n" + "        $a in doc(\"j_caesar.xml\")//ACT, \n" + "        $sc in $a//SCENE, \n" + "        $sp in $sc/SPEECH\n" + "\n" + "    where \n" + "        $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "\n" + "    return \n" + "        <who>{\n" + "            $sp/SPEAKER/text()\n" + "        }</who>,\n" + "\n" + "        <when>{\n" + "            <act>{$a/TITLE/text()}</act>,\n" + "            <scene>{$sc/TITLE/text()}</scene>\n" + "        }</when>\n" + "}</result> ";
+<<<<<<< Updated upstream
         final String SAMPLE_QUERY_2 = "<result>{\n" + "    for\n" + "        $s in doc(\"j_caesar.xml\")//SPEAKER\n" + "    return \n" + "        <speaks>{\n" + "            <who>{\n" + "                $s/text()\n" + "            }</who>,\n" + "\n" + "            for \n" + "                $a in doc(\"j_caesar.xml\")//ACT\n" + "            where \n" + "                some $s1 in $a//SPEAKER satisfies $s1 eq $s\n" + "            return <when>{\n" + "                $a/TITLE/text()\n" + "            }</when>\n" + "        }</speaks>\n" + "}</result> ";
 
         XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
@@ -41,6 +42,38 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         System.out.println("--------------------------------------------------------------------------------");
         System.out.println("--------------------------------------------------------------------------------");
         engine.evaluate(SAMPLE_QUERY_2, "result2.xml");
+=======
+        final String SAMPLE_QUERY_2 = "<result>{\n" + "    for\n" + "        $a in doc(\"j_caesar.xml\")//ACT\n" + "    where \n" + "        some $s1 in $a//SPEAKER satisfies $s1/text() = \"CAESAR\"\n" + "\n" + "    return \n" + "        <when>{\n" + "            $a/TITLE/text()\n" + "        }</when>\n" + "}</result> ";
+        final String SAMPLE_QUERY_3 = "<result>{\n" + "    for\n" + "        $s in doc(\"j_caesar.xml\")//SPEAKER\n" + "    return \n" + "        <speaks>{\n" + "            <who>{\n" + "                $s/text()\n" + "            }</who>,\n" + "\n" + "            for \n" + "                $a in doc(\"j_caesar.xml\")//ACT\n" + "            where \n" + "                some $s1 in $a//SPEAKER satisfies $s1 eq $s\n" + "            return <when>{\n" + "                $a/TITLE/text()\n" + "            }</when>\n" + "        }</speaks>\n" + "}</result> ";
+        final String SAMPLE_QUERY_4 = "<result>{\n" + "  for\n" + "    $a in doc(\"j_caesar.xml\")//PERSONAE, \n" + "    $b in $a/PERSONA \n" + "  where not (($b/text() = \"JULIUS CAESAR\") or ($b/text() = \"Another Poet\") )\n" + "  return $b\n" + "}</result>";
+        final String SAMPLE_QUERY_5 = "<acts>{\n" + "  for $a in doc(\"j_caesar.xml\")//ACT\n" + "  where not (\n" + "    for $sp in $a/SCENE/SPEECH  \n" + "    where ($sp/SPEAKER/text() = \"FLAVIUS\" and $sp/../TITLE/text()=\"SCENE I.  Rome. A street.\")\n" + "    return <speaker>{ $sp/text() }</speaker> \n" + "  )\n" + "  return <act>{$a/TITLE/text()}</act> \n" + "}</acts>";
+        final String SAMPLE_QUERY_6 = "<result>{\n" + "  for $s in doc(\"j_caesar.xml\")//SCENE\n" + "  where $s//SPEAKER/text()=\"CAESAR\"  \n" + "  return <scenes>{ \n" + "    <scene> {\n" + "      $s/TITLE/text()\n" + "    }</scene>, \n" + "    for $a in doc(\"j_caesar.xml\")//ACT\n" + "    where some $s1 in (\n" + "      for $x in $a//SCENE \n" + "      where $x/TITLE/text()=\"SCENE II.  A public place.\"  \n" + "      return $x\n" + "    )\n" + "    satisfies $s1 eq $s and $a/TITLE/text() = \"ACT I\"\n" + "    return <act>{\n" + "      $a/TITLE/text()\n" + "    }</act>\n" + "  }</scenes>\n" + "}</result>";
+        // String[] sampleQueries = {SAMPLE_QUERY_1, SAMPLE_QUERY_2, SAMPLE_QUERY_3, SAMPLE_QUERY_4, SAMPLE_QUERY_5};
+        String[] sampleQueries = {SAMPLE_QUERY_1, SAMPLE_QUERY_2};
+
+        String queryFilePath = "input/m2-test.txt";
+        ArrayList<String> queries = new ArrayList<>();
+        try {
+            queries = new ArrayList<>(Files.readAllLines(Paths.get(queryFilePath)));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
+        for (int i = 0; i < queries.size(); i++) {
+            if (i != 1) {
+                continue;
+            }
+            System.out.println("Testing query " + (i + 1));
+            System.out.println("Processing query: \n" + sampleQueries[i]);
+            try {
+                engine.evaluate(queries.get(i), "result" + (i + 1) + ".xml");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println("--------------------------------------------------------------------------------");
+            System.out.println("--------------------------------------------------------------------------------");
+        }
+>>>>>>> Stashed changes
     }
 
     /* Decorator function to print out the name of the node being processed */
@@ -70,6 +103,7 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
             }
             document.appendChild(root);
         } else {
+            System.out.println(result);
             document.appendChild(document.importNode(result.iterator().next(), true));
         }
         String outputFilePath = outputDirectory + outputFileName;
@@ -81,6 +115,29 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
         parser = new XQueryParser(query);
         ParseTree tree = parser.getTree();
         return processXQuery(tree, new HashMap<>());
+    }
+
+    private void processInLoop(String varName, ParseTree xquery, List<HashMap<String, Node>> varHashMapList) {
+        boolean isEmpty = varHashMapList.isEmpty();
+        List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
+
+        // If varHashMapList empty, iterableList = [null]
+        List<HashMap<String, Node>> iterableList = isEmpty ? Collections.singletonList(null) : varHashMapList;
+
+        for (HashMap<String, Node> varHashMap : iterableList) {
+            Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
+            for (Node node : xqueryResult) {
+                HashMap<String, Node> newVarHashMap = new HashMap<>(varHashMap != null ? varHashMap : Collections.emptyMap());
+                newVarHashMap.put(varName, node);
+                newVarHashMapList.add(newVarHashMap);
+            }
+        }
+
+        if (!isEmpty) {
+            varHashMapList.clear();  // only non-empty list should be cleared
+        }
+        varHashMapList.addAll(newVarHashMapList);
+        // System.out.println(varHashMapList);
     }
 
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
@@ -95,11 +152,8 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 varName = tree.getChild(1).getText();
                 xquery = tree.getChild(3);
                 assert varHashMapList.isEmpty();
-                for (Node node : processXQuery(xquery, null)) {
-                    HashMap<String, Node> varHashMap = new HashMap<>();
-                    varHashMap.put(varName, node);
-                    varHashMapList.add(varHashMap);
-                }
+                processInLoop(varName, xquery, varHashMapList);
+                // System.out.println(varHashMapList);
                 return;
             case 5:
                 // forClause ',' var 'in' xquery
@@ -107,20 +161,8 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 processForClause(forClause, varHashMapList);
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
-                List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
-                for (HashMap<String, Node> varHashMap : varHashMapList) {
-                    Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
-                    for (Node node : xqueryResult) {
-                        newVarHashMapList.add(new HashMap<>(varHashMap) {
-                            {
-                                put(varName, node);
-                            }
-                        });
-                    }
-
-                }
-                varHashMapList.clear();
-                varHashMapList.addAll(newVarHashMapList);
+                processInLoop(varName, xquery, varHashMapList);
+                // System.out.println(varHashMapList);
                 return;
             default:
                 throw new IllegalArgumentException("processForClause: invalid child count");
@@ -129,7 +171,9 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
 
     public Set<Node> processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = getChildren(tree, "xquery");
+        // System.out.println(tree.getText());
         int childCount = tree.getChildCount();
+        // System.out.println(children);
         if (childCount == 1) {
             if (children.containsKey("var")) {
                 // var
@@ -270,12 +314,23 @@ public class XQueryEngine extends XQueryGrammarBaseVisitor<Set<Node>> {
                 throw new NotImplementedException("processCond: 'empty' '(' xquery ')' not implemented");
             case 6:
                 // 'some' var 'in' xquery 'satisfies' cond
-                ParseTree var = tree.getChild(1);
+                String varName = tree.getChild(1).getText();
                 ParseTree xquery = tree.getChild(3);
                 ParseTree subCond = tree.getChild(5);
-                Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
                 // TODO: implement 'some' var 'in' xquery 'satisfies' cond, which checks if there exists a var in xquery such that cond is true
-                throw new NotImplementedException("processCond: 'some' var 'in' xquery 'satisfies' cond not implemented");
+                List<HashMap<String, Node>> listMap = new ArrayList<>();
+                listMap.add(varHashMap);
+                // implement: 'some' var 'in' xquery
+                System.out.println("    some results before:" + listMap);
+                processInLoop(varName, xquery, listMap);
+                System.out.println("    some condition:" + subCond.getText());
+                System.out.println("    some results:" + listMap);
+                // check condition
+                for (HashMap<String, Node> varHashMap_i : listMap) {
+                    if (processCond(subCond, varHashMap_i)) return true;
+                }
+                return false;
+//                throw new NotImplementedException("processCond: 'some' var 'in' xquery 'satisfies' cond not implemented");
             default:
                 throw new IllegalArgumentException("processCond: invalid child count");
         }
