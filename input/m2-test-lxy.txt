@@ -1,0 +1,2 @@
+<result>{ for $a in doc("j_caesar.xml")//ACT, $sc in $a//SCENE, $sp in $sc/SPEECH let $i := $sp return <who>{$i/SPEAKER/text()}</who>}</result>
+<result>{ let $i := doc("j_caesar.xml")//SCENE/SPEECH  return <who>{$i/SPEAKER/text() }</who>}</result>

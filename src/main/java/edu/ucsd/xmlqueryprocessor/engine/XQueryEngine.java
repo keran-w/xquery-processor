@@ -44,9 +44,12 @@ public class XQueryEngine {
         final String SAMPLE_QUERY_3 = "<result>{\n" + "  for\n" + "    $a in doc(\"j_caesar.xml\")//PERSONAE, \n" + "    $b in $a/PERSONA \n" + "  where not empty(($b/text() = \"JULIUS CAESAR\") or ($b/text() = \"Another Poet\") )\n" + "  return $b\n" + "}</result>";
         final String SAMPLE_QUERY_4 = "<acts>{\n" + "  for $a in doc(\"j_caesar.xml\")//ACT\n" + "  where not (\n" + "    for $sp in $a/SCENE/SPEECH  \n" + "    where ($sp/SPEAKER/text() = \"FLAVIUS\" and $sp/../TITLE/text()=\"SCENE I.  Rome. A street.\")\n" + "    return <speaker>{ $sp/text() }</speaker> \n" + "  )\n" + "  return <act>{$a/TITLE/text()}</act> \n" + "}</acts>";
         final String SAMPLE_QUERY_5 = "<result>{\n" + "  for $s in doc(\"j_caesar.xml\")//SCENE\n" + "  where $s//SPEAKER/text()=\"CAESAR\"  \n" + "  return <scenes>{ \n" + "    <scene> {\n" + "      $s/TITLE/text()\n" + "    }</scene>, \n" + "    for $a in doc(\"j_caesar.xml\")//ACT\n" + "    where some $s1 in (\n" + "      for $x in $a//SCENE \n" + "      where $x/TITLE/text()=\"SCENE II.  A public place.\"  \n" + "      return $x\n" + "    )\n" + "    satisfies $s1 eq $s and $a/TITLE/text() = \"ACT I\"\n" + "    return <act>{\n" + "      $a/TITLE/text()\n" + "    }</act>\n" + "  }</scenes>\n" + "}</result>";
-        String[] sampleQueries = {SAMPLE_QUERY_1, SAMPLE_QUERY_2, SAMPLE_QUERY_3, SAMPLE_QUERY_4, SAMPLE_QUERY_5};
+        final String SAMPLE_QUERY_6 = "<result>{\n" + " for\n" + " $a in doc(\"j_caesar.xml\")//ACT, \n" + " $sc in $a//SCENE, \n" + " $sp in $sc/SPEECH\n" + "\n" + " let \n" + " $i := $sp\n" + "\n" + " return \n" + " <who>{\n" + " $i/SPEAKER/text()\n" + " }</who>,\n" + "}</result> ";
+        final String SAMPLE_QUERY_7 = "<result>{\n" + " let \n" + " $i := doc(\"j_caesar.xml\")//SCENE/SPEECH\n" + "\n" + " return \n" + " <who>{\n" + " $i/SPEAKER/text()\n" + " }</who>\n" + "}</result> ";
+        // String[] sampleQueries = {SAMPLE_QUERY_1, SAMPLE_QUERY_2, SAMPLE_QUERY_3, SAMPLE_QUERY_4, SAMPLE_QUERY_5};
+        String[] sampleQueries = {SAMPLE_QUERY_6, SAMPLE_QUERY_7};
 
-        String queryFilePath = "input/m2-test.txt";
+        String queryFilePath = "input/m2-test-lxy.txt";
         ArrayList<String> queries = new ArrayList<>();
         try {
             queries = new ArrayList<>(Files.readAllLines(Paths.get(queryFilePath)));
@@ -55,7 +58,7 @@ public class XQueryEngine {
         }
 
         for (int i = 0; i < queries.size(); i++) {
-            XQueryEngine engine = new XQueryEngine("data/", "m2-output/");
+            XQueryEngine engine = new XQueryEngine("data/", "m2-output-lxy/");
             System.out.println("Testing query " + (i + 1));
             System.out.println("Processing query: \n" + sampleQueries[i]);
             try {
@@ -166,6 +169,8 @@ public class XQueryEngine {
 
     public Set<Node> processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = parser.getChildren(tree);
+//        System.out.println(children);
+//        System.out.println(getChildren(tree, "Xquery"));
         int childCount = tree.getChildCount();
         if (childCount == 1) {
             if (children.containsKey(KEY_VAR)) {
@@ -189,7 +194,7 @@ public class XQueryEngine {
             processForClause((ParseTree) children.get(KEY_FOR_CLAUSE).get(0), varHashMapList);
 
             if (children.containsKey(KEY_LET_CLAUSE)) {
-                processLetClause((ParseTree) children.get(KEY_LET_CLAUSE).get(0));
+                processLetClause((ParseTree) children.get(KEY_LET_CLAUSE).get(0), varHashMapList);
             }
             if (children.containsKey(KEY_WHERE_CLAUSE)) {
                 processWhereClause((ParseTree) children.get(KEY_WHERE_CLAUSE).get(0), varHashMapList);
@@ -205,11 +210,22 @@ public class XQueryEngine {
         } else if (children.containsKey(KEY_LET_CLAUSE)) {
             // letClause xquery
             // TODO: call processLetClause and processXQuery
-            throw new NotImplementedException("processXQuery: letClause xquery not implemented");
+            List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
+            processLetClause((ParseTree) children.get("letClause").get(0), varHashMapList);
+
+            ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
+
+            Set<Node> res = createSet();
+            for (HashMap<String, Node> varHashMapItem : varHashMapList) {
+                res.addAll(processReturnClause(returnClause, varHashMapItem));
+            }
+            return res;
+            // throw new NotImplementedException("processXQuery: letClause xquery not implemented");
         } else if (children.containsKey(KEY_TAG_NAME)) {
             // '<' tagName '>' '{' xquery '}' '</' tagName '>'
             String tagName = tree.getChild(1).getText();
             ParseTree xquery = tree.getChild(4);
+            // System.out.println(xquery.getText());
             Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
 
             Node newNode = document.createElement(tagName);
@@ -243,21 +259,36 @@ public class XQueryEngine {
         }
     }
 
-    public Set<Node> processLetClause(ParseTree tree) {
+    public void processLetClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         // TODO: modify the return type and params of processLetClause
         // Map<String, List<Object>> children = getChildren(tree, "letClause");
         int childCount = tree.getChildCount();
+        String varName;
+        ParseTree xquery;
+        ParseTree letClause;
+//        System.out.println("Let Clause ----" + tree.getText());
         switch (childCount) {
             case 4:
                 // 'let' var ':=' xquery
                 // TODO: implement 'let' var ':=' xquery, which assigns the result of xquery to
-                // var
-                throw new NotImplementedException("processLetClause: 'let' var ':=' xquery not implemented");
+                varName = tree.getChild(1).getText();
+                xquery = tree.getChild(3);
+                processInStatement(varName, xquery, varHashMapList);
+                // System.out.println(varHashMapList);
+                return;
+            // throw new NotImplementedException("processLetClause: 'let' var ':=' xquery not implemented");
             case 5:
                 // letClause ',' var ':=' xquery
                 // TODO: implement letClause ',' var ':=' xquery, similar to 'let' var ':='
                 // xquery, but with multiple assignments
-                throw new NotImplementedException("processLetClause: letClause ',' var ':=' xquery not implemented");
+                letClause = tree.getChild(0);
+                processLetClause(letClause, varHashMapList);
+                varName = tree.getChild(2).getText();
+                xquery = tree.getChild(4);
+                processInStatement(varName, xquery, varHashMapList);
+                // System.out.println(varHashMapList);
+                return;
+            // throw new NotImplementedException("processLetClause: letClause ',' var ':=' xquery not implemented");
             default:
                 throw new IllegalArgumentException("processLetClause: invalid child count");
         }
