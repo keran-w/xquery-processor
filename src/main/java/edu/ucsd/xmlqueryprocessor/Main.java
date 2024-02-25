@@ -29,9 +29,7 @@ public class Main {
             int queryCounter = 0;
             for (String query: lines) {
                 queryCounter++;
-//                if (queryCounter > 10) {
-//                    continue;
-//                }
+
                 System.out.println("SAMPLE QUERY " + queryCounter + ":\t" + "SAMPLE_QUERY_" + queryCounter);
                 engine.evaluate(query, "result" + queryCounter + ".xml");
                 System.out.println("--------------------------------------------------------------------------------");
