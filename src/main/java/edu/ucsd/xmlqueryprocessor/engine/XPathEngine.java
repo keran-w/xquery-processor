@@ -3,10 +3,10 @@ package edu.ucsd.xmlqueryprocessor.engine;
 import edu.ucsd.xmlqueryprocessor.parser.XMLParser;
 import edu.ucsd.xmlqueryprocessor.parser.XPathParser;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -56,6 +56,7 @@ public class XPathEngine {
             ParseTree child = tree.getChild(i);
             System.out.println("\tChild: " + child.getText());
         }
+        System.out.println();
     }
 
     public Set<Node> processAbsolutePath(ParseTree tree) {
@@ -102,12 +103,18 @@ public class XPathEngine {
                     // relativePath ',' relativePath
                     // relativePath '/' relativePath
                     // relativePath '//' relativePath
-                    // TODO: Implement ',' operator
-                    assert "/".equals(op) || "//".equals(op);
                     String nxtOp = relativePath.getChild(1).getText();
-                    ParseTree left = relativePath.getChild(0);
-                    ParseTree right = relativePath.getChild(2);
-                    return processRelativePath(processRelativePath(nodes, left, op), right, nxtOp);
+                    if (",".equals(nxtOp)) {
+                        Set<Node> leftResults = processRelativePath(nodes, relativePath.getChild(0), op);
+                        Set<Node> rightResults = processRelativePath(nodes, relativePath.getChild(2), op);
+                        leftResults.addAll(rightResults);
+                        return leftResults;
+                    } else {
+                        assert "/".equals(nxtOp) || "//".equals(nxtOp);
+                        ParseTree left = relativePath.getChild(0);
+                        ParseTree right = relativePath.getChild(2);
+                        return processRelativePath(processRelativePath(nodes, left, op), right, nxtOp);
+                    }
                 }
 
             case 4:
@@ -150,8 +157,14 @@ public class XPathEngine {
             default:
                 if (leafSymbol.startsWith(AT)) {
                     // attName
-                    // TODO: Implement attribute name, @attrName == /attrValue/text()
-                    throw new NotImplementedException("processRPLeaf: attribute not implemented");
+                    String attName = leafSymbol.substring(1);
+                    for (Node node : nodes) {
+                        Set<Node> attResults = XMLParser.getNodeByNameNextLevel(node, attName);
+                        for (Node attNode : attResults) {
+                            results.add(attNode.getFirstChild());
+                        }
+                    }
+                    return results;
                 } else {
                     // tagName
                     for (Node node : nodes) {
@@ -228,15 +241,36 @@ public class XPathEngine {
                 // Length of the left and right sets should be equal
                 // After sorting the sets, the elements should be equal
                 // Check node.isEqualNode() / node.isEqualNode() methods
-                // TODO: Implement equality for checking if the content of the nodes are equal
-                throw new NotImplementedException("processPathFilter: 'eq' not implemented");
+                Set<Node> leftEqResults = processRelativePath(Set.of(node), left, "/");
+                Set<Node> rightEqResults = processRelativePath(Set.of(node), right, "/");
+                if (leftEqResults.size() != rightEqResults.size()) {
+                    return false;
+                }
+                Iterator<Node> leftIterator = leftEqResults.iterator();
+                Iterator<Node> rightIterator = rightEqResults.iterator();
+                while (leftIterator.hasNext()) {
+                    if (!leftIterator.next().isEqualNode(rightIterator.next())) {
+                        return false;
+                    }
+                }
+                return true;
             case "==":
             case "is":
                 // relativePath '==' relativePath
                 // relativePath 'is' relativePath
                 Set<Node> leftIsResults = processRelativePath(Set.of(node), left, "/");
                 Set<Node> rightIsResults = processRelativePath(Set.of(node), right, "/");
-                return leftIsResults.equals(rightIsResults);
+                if (leftIsResults.size() != rightIsResults.size()) {
+                    return false;
+                }
+                Iterator<Node> leftIsIterator = leftIsResults.iterator();
+                Iterator<Node> rightIsIterator = rightIsResults.iterator();
+                while (leftIsIterator.hasNext()) {
+                    if (!leftIsIterator.next().isSameNode(rightIsIterator.next())) {
+                        return false;
+                    }
+                }
+                return true;
             case "and":
                 // pathFilter 'and' pathFilter
                 boolean andLeft = processPathFilter(node, left);

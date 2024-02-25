@@ -2,7 +2,6 @@ package edu.ucsd.xmlqueryprocessor.engine;
 
 import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.apache.commons.lang3.NotImplementedException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -170,7 +169,6 @@ public class XQueryEngine {
             return res;
         } else if (children.containsKey(KEY_LET_CLAUSE)) {
             // letClause xquery
-            // TODO: call processLetClause and processXQuery
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
             processLetClause((ParseTree) children.get("letClause").get(0), varHashMapList);
 
@@ -221,35 +219,26 @@ public class XQueryEngine {
     }
 
     public void processLetClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
-        // TODO: modify the return type and params of processLetClause
-        // Map<String, List<Object>> children = getChildren(tree, "letClause");
         int childCount = tree.getChildCount();
         String varName;
         ParseTree xquery;
         ParseTree letClause;
-//        System.out.println("Let Clause ----" + tree.getText());
         switch (childCount) {
             case 4:
                 // 'let' var ':=' xquery
-                // TODO: implement 'let' var ':=' xquery, which assigns the result of xquery to
                 varName = tree.getChild(1).getText();
                 xquery = tree.getChild(3);
                 processInStatement(varName, xquery, varHashMapList);
                 // System.out.println(varHashMapList);
                 return;
-            // throw new NotImplementedException("processLetClause: 'let' var ':=' xquery not implemented");
             case 5:
                 // letClause ',' var ':=' xquery
-                // TODO: implement letClause ',' var ':=' xquery, similar to 'let' var ':='
-                // xquery, but with multiple assignments
                 letClause = tree.getChild(0);
                 processLetClause(letClause, varHashMapList);
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
                 processInStatement(varName, xquery, varHashMapList);
-                // System.out.println(varHashMapList);
                 return;
-            // throw new NotImplementedException("processLetClause: letClause ',' var ':=' xquery not implemented");
             default:
                 throw new IllegalArgumentException("processLetClause: invalid child count");
         }
@@ -257,7 +246,6 @@ public class XQueryEngine {
 
     public void processWhereClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         // 'where' cond
-        // Map<String, List<Object>> children = getChildren(tree, KEY_WHERE_CLAUSE);
         ParseTree cond = tree.getChild(1);
         List<HashMap<String, Node>> newVarHashMapList = new ArrayList<>();
         for (HashMap<String, Node> varHashMap : varHashMapList) {
@@ -272,13 +260,11 @@ public class XQueryEngine {
 
     public Set<Node> processReturnClause(ParseTree tree, HashMap<String, Node> varHashMap) {
         // 'return' xquery
-        // Map<String, List<Object>> children = getChildren(tree, KEY_RETURN_CLAUSE);
         ParseTree xquery = tree.getChild(1);
         return processXQuery(xquery, varHashMap);
     }
 
     public boolean processCond(ParseTree tree, HashMap<String, Node> varHashMap) {
-        // Map<String, List<Object>> children = getChildren(tree, "cond");
         int childCount = tree.getChildCount();
         switch (childCount) {
             case 2:
@@ -345,7 +331,6 @@ public class XQueryEngine {
                 if (leftSet.size() != rightSet.size()) {
                     return false;
                 } else {
-                    // TODO: implement comparison of sets of nodes
                     Iterator<Node> leftItr = leftSet.iterator();
                     Iterator<Node> rightItr = rightSet.iterator();
                     while (leftItr.hasNext()) {
@@ -361,8 +346,18 @@ public class XQueryEngine {
             case "is":
                 // xquery '==' xquery
                 // xquery 'is' xquery
-                // TODO: implement comparison reference of nodes, similar to XPathEngine
-                throw new NotImplementedException("processCond: " + op + " not implemented");
+                Set<Node> isLeftSet = processXQuery(left, varHashMap);
+                Set<Node> isRightSet = processXQuery(right, varHashMap);
+                Iterator<Node> leftItr = isLeftSet.iterator();
+                Iterator<Node> rightItr = isRightSet.iterator();
+                while (leftItr.hasNext()) {
+                    Node leftNode = leftItr.next();
+                    Node rightNode = rightItr.next();
+                    if (!leftNode.isSameNode(rightNode)) {
+                        return false;
+                    }
+                }
+                return true;
             case "and":
                 // cond 'and' cond
                 return processCond(left, varHashMap) && processCond(right, varHashMap);

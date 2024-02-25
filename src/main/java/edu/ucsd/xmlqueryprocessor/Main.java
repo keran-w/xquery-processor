@@ -25,7 +25,6 @@ public class Main {
         String mission = args[2];
         System.out.println("Mission: " + mission);
         switch (mission) {
-            case "0":
             case "1":
                 // XPath
                 XPathEngine xpathEngine = new XPathEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
@@ -33,16 +32,15 @@ public class Main {
                 break;
             case "2":
                 // XQuery
-                // XQueryEngine xqueryEngine = new XQueryEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
                 readProcessXQueries(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY, QUERY_FILE_DIRECTORY);
         }
     }
 
     private static void readProcessXPaths(XPathEngine engine, String queryFilePath) {
         try {
-            List < String > lines = Files.readAllLines(Paths.get(queryFilePath));
+            List<String> lines = Files.readAllLines(Paths.get(queryFilePath));
             int queryCounter = 0;
-            for (String query: lines) {
+            for (String query : lines) {
                 queryCounter++;
 
                 System.out.println("SAMPLE QUERY " + queryCounter + ":\t" + "SAMPLE_QUERY_" + queryCounter);
