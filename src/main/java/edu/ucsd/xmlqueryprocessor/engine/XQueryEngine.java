@@ -9,9 +9,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
@@ -19,8 +16,6 @@ import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
 public class XQueryEngine {
-
-    /* TODO: change set to list to allow for duplicate nodes */
 
     private final String outputDirectory;
     private final XPathEngine xpathEngine;
@@ -35,40 +30,6 @@ public class XQueryEngine {
             DocumentBuilder builder = factory.newDocumentBuilder();
             document = builder.newDocument();
         } catch (Exception ignored) {
-        }
-    }
-
-    public static void main(String[] args) {
-        final String SAMPLE_QUERY_1 = "<result>{\n" + "    for\n" + "        $a in doc(\"j_caesar.xml\")//ACT, \n" + "        $sc in $a//SCENE, \n" + "        $sp in $sc/SPEECH\n" + "\n" + "    where \n" + "        $sp/LINE/text() = \"Et tu, Brute! Then fall, Caesar.\"\n" + "\n" + "    return \n" + "        <who>{\n" + "            $sp/SPEAKER/text()\n" + "        }</who>,\n" + "\n" + "        <when>{\n" + "            <act>{$a/TITLE/text()}</act>,\n" + "            <scene>{$sc/TITLE/text()}</scene>\n" + "        }</when>\n" + "}</result> ";
-        final String SAMPLE_QUERY_2 = "<result>{\n" + "    for\n" + "        $s in doc(\"j_caesar.xml\")//SPEAKER\n" + "    return \n" + "        <speaks>{\n" + "            <who>{\n" + "                $s/text()\n" + "            }</who>,\n" + "\n" + "            for \n" + "                $a in doc(\"j_caesar.xml\")//ACT\n" + "            where \n" + "                some $s1 in $a//SPEAKER satisfies $s1 eq $s\n" + "            return <when>{\n" + "                $a/TITLE/text()\n" + "            }</when>\n" + "        }</speaks>\n" + "}</result> ";
-        final String SAMPLE_QUERY_3 = "<result>{\n" + "  for\n" + "    $a in doc(\"j_caesar.xml\")//PERSONAE, \n" + "    $b in $a/PERSONA \n" + "  where not empty(($b/text() = \"JULIUS CAESAR\") or ($b/text() = \"Another Poet\") )\n" + "  return $b\n" + "}</result>";
-        final String SAMPLE_QUERY_4 = "<acts>{\n" + "  for $a in doc(\"j_caesar.xml\")//ACT\n" + "  where not (\n" + "    for $sp in $a/SCENE/SPEECH  \n" + "    where ($sp/SPEAKER/text() = \"FLAVIUS\" and $sp/../TITLE/text()=\"SCENE I.  Rome. A street.\")\n" + "    return <speaker>{ $sp/text() }</speaker> \n" + "  )\n" + "  return <act>{$a/TITLE/text()}</act> \n" + "}</acts>";
-        final String SAMPLE_QUERY_5 = "<result>{\n" + "  for $s in doc(\"j_caesar.xml\")//SCENE\n" + "  where $s//SPEAKER/text()=\"CAESAR\"  \n" + "  return <scenes>{ \n" + "    <scene> {\n" + "      $s/TITLE/text()\n" + "    }</scene>, \n" + "    for $a in doc(\"j_caesar.xml\")//ACT\n" + "    where some $s1 in (\n" + "      for $x in $a//SCENE \n" + "      where $x/TITLE/text()=\"SCENE II.  A public place.\"  \n" + "      return $x\n" + "    )\n" + "    satisfies $s1 eq $s and $a/TITLE/text() = \"ACT I\"\n" + "    return <act>{\n" + "      $a/TITLE/text()\n" + "    }</act>\n" + "  }</scenes>\n" + "}</result>";
-        final String SAMPLE_QUERY_6 = "<result>{\n" + " for\n" + " $a in doc(\"j_caesar.xml\")//ACT, \n" + " $sc in $a//SCENE, \n" + " $sp in $sc/SPEECH\n" + "\n" + " let \n" + " $i := $sp\n" + "\n" + " return \n" + " <who>{\n" + " $i/SPEAKER/text()\n" + " }</who>,\n" + "}</result> ";
-        final String SAMPLE_QUERY_7 = "<result>{\n" + " let \n" + " $i := doc(\"j_caesar.xml\")//SCENE/SPEECH\n" + "\n" + " return \n" + " <who>{\n" + " $i/SPEAKER/text()\n" + " }</who>\n" + "}</result> ";
-        // String[] sampleQueries = {SAMPLE_QUERY_1, SAMPLE_QUERY_2, SAMPLE_QUERY_3, SAMPLE_QUERY_4, SAMPLE_QUERY_5};
-        String[] sampleQueries = {SAMPLE_QUERY_6, SAMPLE_QUERY_7};
-
-        String queryFilePath = "input/m2-test-lxy.txt";
-        ArrayList<String> queries = new ArrayList<>();
-        try {
-            queries = new ArrayList<>(Files.readAllLines(Paths.get(queryFilePath)));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        for (int i = 0; i < queries.size(); i++) {
-            XQueryEngine engine = new XQueryEngine("data/", "m2-output-lxy/");
-            System.out.println("Testing query " + (i + 1));
-            System.out.println("Processing query: \n" + sampleQueries[i]);
-            try {
-                engine.evaluate(queries.get(i), "result" + (i + 1) + ".xml");
-                System.out.println("Successfully processed query " + (i + 1) + "!");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            System.out.println("--------------------------------------------------------------------------------");
-            System.out.println("--------------------------------------------------------------------------------");
         }
     }
 

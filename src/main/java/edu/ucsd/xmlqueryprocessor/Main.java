@@ -12,8 +12,8 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length < 2) {
-            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY>");
+        if (args.length < 3) {
+            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY> <ENGINE_MODE>");
             return;
         }
 
@@ -23,15 +23,18 @@ public class Main {
 //        String QUERY_FILE_DIRECTORY = "input/m1-test.txt";
 //        String OUTPUT_FILE_DIRECTORY = "m1-output/";
         String mission = args[2];
+        System.out.println("Mission: " + mission);
         switch (mission) {
+            case "0":
             case "1":
                 // XPath
                 XPathEngine xpathEngine = new XPathEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
                 readProcessXPaths(xpathEngine, QUERY_FILE_DIRECTORY);
+                break;
             case "2":
                 // XQuery
-                XQueryEngine xqueryEngine = new XQueryEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
-                readProcessXQueries(xqueryEngine, OUTPUT_FILE_DIRECTORY);
+                // XQueryEngine xqueryEngine = new XQueryEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
+                readProcessXQueries(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY, QUERY_FILE_DIRECTORY);
         }
     }
 
@@ -52,9 +55,11 @@ public class Main {
         }
     }
 
-    private static void readProcessXQueries(XQueryEngine engine, String queryFilePath) {
+    private static void readProcessXQueries(String FILE_DIRECTORY, String OUTPUT_FILE_DIRECTORY, String queryFilePath) {
+
         ArrayList<String> queries = new ArrayList<>();
         try {
+            System.out.println("Reading queries from " + queryFilePath);
             queries = new ArrayList<>(Files.readAllLines(Paths.get(queryFilePath)));
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,6 +68,7 @@ public class Main {
         for (int i = 0; i < queries.size(); i++) {
             System.out.println("Testing query " + (i + 1));
             System.out.println("Processing query: \n" + queries.get(i));
+            XQueryEngine engine = new XQueryEngine(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY);
             try {
                 engine.evaluate(queries.get(i), "result" + (i + 1) + ".xml");
                 System.out.println("Successfully processed query " + (i + 1) + "!");
