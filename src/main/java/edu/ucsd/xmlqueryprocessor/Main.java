@@ -2,16 +2,58 @@ package edu.ucsd.xmlqueryprocessor;
 
 import edu.ucsd.xmlqueryprocessor.engine.XPathEngine;
 import edu.ucsd.xmlqueryprocessor.engine.XQueryEngine;
+import edu.ucsd.xmlqueryprocessor.util.FileComparer;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Main {
-    public static void main(String[] args) {
+
+    public static void main(String[] args) throws IOException {
+
+        int milestone = 3;
+        int queryCount = 2;
+        System.out.println("--------------------------------------------------------------------------------");
+        for (int index = 2; index <= queryCount; index++) {
+            try {
+                String outputDir = String.format("output/test%d/", milestone);
+                Path outputPath = Paths.get(outputDir);
+                XQueryEngine engine = new XQueryEngine("data/", outputDir);
+                if (!Files.exists(outputPath)) {
+                    Files.createDirectory(outputPath);
+                }
+
+                System.out.printf("Testing query %d%n", index);
+                String query;
+                Path filepath;
+                if (milestone == 3) {
+                    filepath = Paths.get(String.format("input/m%d/query%d.txt", milestone, index));
+//                    filepath = Paths.get(String.format("input/m%d/query%d.txt", milestone, index));
+                    query = Files.readString(filepath);
+                } else {
+                    filepath = Paths.get(String.format("input/m%d/m%d-test.txt", milestone, milestone));
+                    query = Files.readAllLines(filepath).get(index - 1);
+                }
+
+                engine.evaluate(query, String.format("result%d.xml", index));
+                System.out.printf("Successfully processed query %d!%n", index);
+                FileComparer.compareFiles(
+                        String.format("output/test%d/result%d.xml", milestone, index),
+                        String.format("output/m%d/result%d.xml", milestone, index)
+                );
+                System.out.println("--------------------------------------------------------------------------------");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    /*public static void main(String[] args) {
         if (args.length < 3) {
             System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY> <ENGINE_MODE>");
             return;
@@ -34,7 +76,7 @@ public class Main {
                 // XQuery
                 readProcessXQueries(FILE_DIRECTORY, OUTPUT_FILE_DIRECTORY, QUERY_FILE_DIRECTORY);
         }
-    }
+    }*/
 
     private static void readProcessXPaths(XPathEngine engine, String queryFilePath) {
         try {
