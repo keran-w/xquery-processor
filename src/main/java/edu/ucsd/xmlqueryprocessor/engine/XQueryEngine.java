@@ -8,6 +8,8 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
@@ -102,6 +104,7 @@ public class XQueryEngine {
     }
 
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
+        System.out.println("for varHashMapList: " + varHashMapList);
         // Map<String, List<Object>> children = getChildren(tree, "forClause");
         int childCount = tree.getChildCount();
         String varName;
@@ -120,7 +123,9 @@ public class XQueryEngine {
                 processForClause(forClause, varHashMapList);
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
+                System.out.println("varHashMapList: " + varHashMapList);
                 processInStatement(varName, xquery, varHashMapList);
+                System.out.println("varHashMapList: " + varHashMapList);
                 return;
             default:
                 throw new IllegalArgumentException("processForClause: invalid child count");
@@ -136,6 +141,7 @@ public class XQueryEngine {
             if (children.containsKey(KEY_VAR)) {
                 // var
                 assert varHashMap.containsKey(tree.getText());
+                System.out.println("tree.getText(): " + tree.getText());
                 return createSet(varHashMap.get(tree.getText()));
             } else if (children.containsKey(KEY_STRING_CONSTANT)) {
                 // stringConstant
@@ -169,14 +175,19 @@ public class XQueryEngine {
             return res;
         } else if (children.containsKey(KEY_LET_CLAUSE)) {
             // letClause xquery
+            ParseTree letClause = tree.getChild(0);
+            ParseTree xquery = tree.getChild(1);
+            System.out.println("let: " + letClause.getText() + " xquery: " + xquery.getText());
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
-            processLetClause((ParseTree) children.get("letClause").get(0), varHashMapList);
-
-            ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
+            if (!varHashMap.isEmpty()) {
+                varHashMapList.add(varHashMap);
+            }
+            processLetClause(letClause, varHashMapList);
+            System.out.println("varHashMapList: " + varHashMapList);
 
             Set<Node> res = createSet();
             for (HashMap<String, Node> varHashMapItem : varHashMapList) {
-                res.addAll(processReturnClause(returnClause, varHashMapItem));
+                res.addAll(processXQuery(xquery, varHashMapItem));
             }
             return res;
             // throw new NotImplementedException("processXQuery: letClause xquery not implemented");
