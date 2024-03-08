@@ -40,3 +40,4 @@ build/
 ### IntelliJ ###
 .idea
 out
+META-INF
