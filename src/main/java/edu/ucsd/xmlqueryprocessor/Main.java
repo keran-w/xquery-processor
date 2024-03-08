@@ -12,17 +12,18 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        if (args.length < 3) {
-            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY> <ENGINE_MODE>");
-            return;
-        }
+//        if (args.length < 3) {
+//            System.out.println("Usage: java Main <QUERY_FILE_DIRECTORY> <OUTPUT_FILE_DIRECTORY> <ENGINE_MODE>");
+//            return;
+//        }
 
         String FILE_DIRECTORY = "data/";
-        String QUERY_FILE_DIRECTORY = args[0];
-        String OUTPUT_FILE_DIRECTORY = args[1];
-//        String QUERY_FILE_DIRECTORY = "input/m1-test.txt";
-//        String OUTPUT_FILE_DIRECTORY = "m1-output/";
-        String mission = args[2];
+//        String QUERY_FILE_DIRECTORY = args[0];
+//        String OUTPUT_FILE_DIRECTORY = args[1];
+        String QUERY_FILE_DIRECTORY = "input/m2-test-lxy.txt";
+        String OUTPUT_FILE_DIRECTORY = "m2-output-lxy/";
+//        String mission = args[2];
+        String mission = "2";
         System.out.println("Mission: " + mission);
         switch (mission) {
             case "1":

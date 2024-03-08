@@ -10,8 +10,7 @@ xquery
     | xquery '//' relativePath
     | '<' tagName '>' '{' xquery '}' '</' tagName '>'
     | forClause letClause? whereClause? returnClause
-    | letClause whereClause? returnClause
-    | letClause xquery
+    | letClause forClause letClause? whereClause? returnClause
     ;
 
 forClause

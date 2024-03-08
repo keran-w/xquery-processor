@@ -147,6 +147,29 @@ public class XQueryEngine {
                 throw new IllegalArgumentException("processXQuery: invalid key: " + children.keySet());
             }
 
+        } else if (children.containsKey(KEY_LET_CLAUSE)) {
+            // letClause xquery
+            List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
+            processLetClause((ParseTree) children.get("letClause").get(0), varHashMapList);
+
+            if (children.containsKey(KEY_FOR_CLAUSE )) {
+                processForClause((ParseTree) children.get(KEY_FOR_CLAUSE).get(0), varHashMapList);
+            }
+            if (children.containsKey(KEY_LET_CLAUSE)) {
+                processLetClause((ParseTree) children.get(KEY_LET_CLAUSE).get(0), varHashMapList);
+            }
+            if (children.containsKey(KEY_WHERE_CLAUSE)) {
+                processWhereClause((ParseTree) children.get(KEY_WHERE_CLAUSE).get(0), varHashMapList);
+            }
+
+            ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
+
+            Set<Node> res = createSet();
+            for (HashMap<String, Node> varHashMapItem : varHashMapList) {
+                res.addAll(processReturnClause(returnClause, varHashMapItem));
+            }
+            return res;
+            // throw new NotImplementedException("processXQuery: letClause xquery not implemented");
         } else if (children.containsKey(KEY_FOR_CLAUSE)) {
             // forClause letClause? whereClause? returnClause
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
@@ -167,19 +190,6 @@ public class XQueryEngine {
                 res.addAll(processReturnClause(returnClause, varHashMapItem));
             }
             return res;
-        } else if (children.containsKey(KEY_LET_CLAUSE)) {
-            // letClause xquery
-            List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
-            processLetClause((ParseTree) children.get("letClause").get(0), varHashMapList);
-
-            ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
-
-            Set<Node> res = createSet();
-            for (HashMap<String, Node> varHashMapItem : varHashMapList) {
-                res.addAll(processReturnClause(returnClause, varHashMapItem));
-            }
-            return res;
-            // throw new NotImplementedException("processXQuery: letClause xquery not implemented");
         } else if (children.containsKey(KEY_TAG_NAME)) {
             // '<' tagName '>' '{' xquery '}' '</' tagName '>'
             String tagName = tree.getChild(1).getText();
