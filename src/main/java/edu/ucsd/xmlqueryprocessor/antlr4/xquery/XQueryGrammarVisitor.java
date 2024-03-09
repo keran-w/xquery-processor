@@ -1,4 +1,4 @@
-// Generated from D:/Java-code/CSE232b_git/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/xquery/XQueryGrammar.g4 by ANTLR 4.13.1
+// Generated from /Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/xquery/XQueryGrammar.g4 by ANTLR 4.13.1
 package edu.ucsd.xmlqueryprocessor.antlr4.xquery;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -16,6 +16,12 @@ public interface XQueryGrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitXquery(XQueryGrammarParser.XqueryContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link XQueryGrammarParser#tuple}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTuple(XQueryGrammarParser.TupleContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link XQueryGrammarParser#forClause}.
 	 * @param ctx the parse tree
@@ -64,6 +70,12 @@ public interface XQueryGrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitPathFilter(XQueryGrammarParser.PathFilterContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link XQueryGrammarParser#key}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitKey(XQueryGrammarParser.KeyContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link XQueryGrammarParser#var}.
 	 * @param ctx the parse tree

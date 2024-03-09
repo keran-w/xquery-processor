@@ -1,4 +1,4 @@
-// Generated from D:/Java-code/CSE232b_git/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/xquery/XQueryGrammar.g4 by ANTLR 4.13.1
+// Generated from /Users/keranwang/Desktop/Winter 24/CSE 232B/project/xquery-processor/src/main/java/edu/ucsd/xmlqueryprocessor/antlr4/xquery/XQueryGrammar.g4 by ANTLR 4.13.1
 package edu.ucsd.xmlqueryprocessor.antlr4.xquery;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -24,6 +24,18 @@ public class XQueryGrammarBaseListener implements XQueryGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitXquery(XQueryGrammarParser.XqueryContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterTuple(XQueryGrammarParser.TupleContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitTuple(XQueryGrammarParser.TupleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -120,6 +132,18 @@ public class XQueryGrammarBaseListener implements XQueryGrammarListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPathFilter(XQueryGrammarParser.PathFilterContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterKey(XQueryGrammarParser.KeyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitKey(XQueryGrammarParser.KeyContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
