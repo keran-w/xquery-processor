@@ -5,11 +5,10 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 
 import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
@@ -34,34 +33,22 @@ public class XQueryEngine {
         }
     }
 
-    private HashMap<String, Node> createHashMap() {
-        return new HashMap<>(10);
+    private static void printNodeAttributes(Node tuple) {
+        for (int i = 0; i < tuple.getChildNodes().getLength(); i++) {
+            Node child = tuple.getChildNodes().item(i);
+            System.out.print(child.getNodeName() + " ");
+        }
+        System.out.println();
     }
 
-    /**
-     * Decorator function to print out the name of the node being processed
-     */
-    private Map<String, List<Object>> getChildren(ParseTree tree, String name) {
-        System.out.println("Processing " + name + ": " + tree.getText());
-        Map<String, List<Object>> children = parser.getChildren(tree);
-        System.out.println("\tChildren key set: " + children.keySet());
-        for (String key : children.keySet()) {
-            if (Objects.equals(key, "otherChildren")) {
-                System.out.println("\t\t" + key + ": " + children.get(key));
-            } else {
-                for (Object child : children.get(key)) {
-                    System.out.println("\t\t" + key + ": " + ((ParseTree) child).getText());
-                }
-            }
-        }
-
-        return children;
+    private HashMap<String, Node> createHashMap() {
+        return new HashMap<>(10);
     }
 
     public void evaluate(String query, String outputFileName) {
         Set<Node> result = process(query);
         if (result.size() != 1) {
-            Element root = document.createElement("result");
+            Element root = document.createElement("RESULT");
             for (Node node : result) {
                 root.appendChild(document.importNode(node, true));
             }
@@ -104,8 +91,6 @@ public class XQueryEngine {
     }
 
     public void processForClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
-        System.out.println("for varHashMapList: " + varHashMapList);
-        // Map<String, List<Object>> children = getChildren(tree, "forClause");
         int childCount = tree.getChildCount();
         String varName;
         ParseTree xquery;
@@ -123,9 +108,7 @@ public class XQueryEngine {
                 processForClause(forClause, varHashMapList);
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
-                System.out.println("varHashMapList: " + varHashMapList);
                 processInStatement(varName, xquery, varHashMapList);
-                System.out.println("varHashMapList: " + varHashMapList);
                 return;
             default:
                 throw new IllegalArgumentException("processForClause: invalid child count");
@@ -134,14 +117,11 @@ public class XQueryEngine {
 
     public Set<Node> processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = parser.getChildren(tree);
-//        System.out.println(children);
-//        System.out.println(getChildren(tree, "Xquery"));
         int childCount = tree.getChildCount();
         if (childCount == 1) {
             if (children.containsKey(KEY_VAR)) {
                 // var
                 assert varHashMap.containsKey(tree.getText());
-                System.out.println("tree.getText(): " + tree.getText());
                 return createSet(varHashMap.get(tree.getText()));
             } else if (children.containsKey(KEY_STRING_CONSTANT)) {
                 // stringConstant
@@ -149,10 +129,15 @@ public class XQueryEngine {
             } else if (children.containsKey(KEY_ABSOLUTE_PATH)) {
                 // absolutePath
                 return xpathEngine.processAbsolutePath(tree.getChild(0));
+            } else if (children.containsKey(KEY_JOIN)) {
+                // joinClause
+                return processJoin(tree.getChild(0), varHashMap);
+            } else if (children.containsKey(KEY_TUPLE)) {
+                // tuple
+                return processTuple(tree.getChild(0), varHashMap);
             } else {
                 throw new IllegalArgumentException("processXQuery: invalid key: " + children.keySet());
             }
-
         } else if (children.containsKey(KEY_FOR_CLAUSE)) {
             // forClause letClause? whereClause? returnClause
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
@@ -167,7 +152,6 @@ public class XQueryEngine {
             }
 
             ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
-
             Set<Node> res = createSet();
             for (HashMap<String, Node> varHashMapItem : varHashMapList) {
                 res.addAll(processReturnClause(returnClause, varHashMapItem));
@@ -177,13 +161,11 @@ public class XQueryEngine {
             // letClause xquery
             ParseTree letClause = tree.getChild(0);
             ParseTree xquery = tree.getChild(1);
-            System.out.println("let: " + letClause.getText() + " xquery: " + xquery.getText());
             List<HashMap<String, Node>> varHashMapList = new ArrayList<>();
             if (!varHashMap.isEmpty()) {
                 varHashMapList.add(varHashMap);
             }
             processLetClause(letClause, varHashMapList);
-            System.out.println("varHashMapList: " + varHashMapList);
 
             Set<Node> res = createSet();
             for (HashMap<String, Node> varHashMapItem : varHashMapList) {
@@ -195,7 +177,6 @@ public class XQueryEngine {
             // '<' tagName '>' '{' xquery '}' '</' tagName '>'
             String tagName = tree.getChild(1).getText();
             ParseTree xquery = tree.getChild(4);
-            // System.out.println(xquery.getText());
             Set<Node> xqueryResult = processXQuery(xquery, varHashMap);
 
             Node newNode = document.createElement(tagName);
@@ -229,6 +210,68 @@ public class XQueryEngine {
         }
     }
 
+    private Set<Node> processTuple(ParseTree tree, HashMap<String, Node> varHashMap) {
+        // '<tuple>' xquery (',' xquery)+ '</tuple>';
+        Node tuple = document.createElement("tuple");
+        for (int i = 1; i < tree.getChildCount() - 1; i += 2) {
+            Set<Node> xqueryResult = processXQuery(tree.getChild(i), varHashMap);
+            for (Node node : xqueryResult) {
+                tuple.appendChild(document.importNode(node, true));
+            }
+        }
+        return createSet(tuple);
+    }
+
+    public Set<Node> processJoin(ParseTree tree, HashMap<String, Node> varHashMap) {
+        // 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')';
+        Set<Node> leftXqueryResults = processXQuery(tree.getChild(2), varHashMap);
+        Set<Node> rightXqueryResults = processXQuery(tree.getChild(4), varHashMap);
+        String leftKey = tree.getChild(7).getText();
+        String rightKey = tree.getChild(11).getText();
+        // join
+        Set<Node> res = createSet();
+        for (Node leftNode : leftXqueryResults) {
+            for (Node rightNode : rightXqueryResults) {
+                NodeList leftChildNodes = leftNode.getChildNodes();
+                NodeList rightChildNodes = rightNode.getChildNodes();
+                String leftKeyValue = null;
+                for (int i = 0; i < leftChildNodes.getLength(); i++) {
+                    Node leftChildNode = leftChildNodes.item(i);
+                    if (leftChildNode.getNodeType() == Node.ELEMENT_NODE && leftChildNode.getNodeName().equals(leftKey)) {
+                        leftKeyValue = leftChildNode.getTextContent();
+                        break;
+                    }
+                }
+                String rightKeyValue = null;
+                for (int i = 0; i < rightChildNodes.getLength(); i++) {
+                    Node rightChildNode = rightChildNodes.item(i);
+                    if (rightChildNode.getNodeType() == Node.ELEMENT_NODE && rightChildNode.getNodeName().equals(rightKey)) {
+                        rightKeyValue = rightChildNode.getTextContent();
+                        break;
+                    }
+                }
+                if (leftKeyValue != null && leftKeyValue.equals(rightKeyValue)) {
+                    Element tuple = document.createElement("tuple");
+                    for (int i = 0; i < leftChildNodes.getLength(); i++) {
+                        Node leftChildNode = leftChildNodes.item(i);
+                        if (leftChildNode.getNodeType() == Node.ELEMENT_NODE) {
+                            tuple.appendChild(document.importNode(leftChildNode, true));
+                        }
+                    }
+                    for (int i = 0; i < rightChildNodes.getLength(); i++) {
+                        Node rightChildNode = rightChildNodes.item(i);
+                        if (rightChildNode.getNodeType() == Node.ELEMENT_NODE) {
+                            tuple.appendChild(document.importNode(rightChildNode, true));
+                        }
+                    }
+                    res.add(tuple);
+                }
+            }
+        }
+        NodeList test = res.iterator().next().getChildNodes();
+        return res;
+    }
+
     public void processLetClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
         int childCount = tree.getChildCount();
         String varName;
@@ -240,7 +283,6 @@ public class XQueryEngine {
                 varName = tree.getChild(1).getText();
                 xquery = tree.getChild(3);
                 processInStatement(varName, xquery, varHashMapList);
-                // System.out.println(varHashMapList);
                 return;
             case 5:
                 // letClause ',' var ':=' xquery
