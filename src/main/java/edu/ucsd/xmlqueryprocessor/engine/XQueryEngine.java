@@ -228,28 +228,14 @@ public class XQueryEngine {
         Set<Node> rightXqueryResults = processXQuery(tree.getChild(4), varHashMap);
         String leftKey = tree.getChild(7).getText();
         String rightKey = tree.getChild(11).getText();
-        // join
         Set<Node> res = createSet();
         for (Node leftNode : leftXqueryResults) {
             for (Node rightNode : rightXqueryResults) {
                 NodeList leftChildNodes = leftNode.getChildNodes();
                 NodeList rightChildNodes = rightNode.getChildNodes();
-                String leftKeyValue = null;
-                for (int i = 0; i < leftChildNodes.getLength(); i++) {
-                    Node leftChildNode = leftChildNodes.item(i);
-                    if (leftChildNode.getNodeType() == Node.ELEMENT_NODE && leftChildNode.getNodeName().equals(leftKey)) {
-                        leftKeyValue = leftChildNode.getTextContent();
-                        break;
-                    }
-                }
-                String rightKeyValue = null;
-                for (int i = 0; i < rightChildNodes.getLength(); i++) {
-                    Node rightChildNode = rightChildNodes.item(i);
-                    if (rightChildNode.getNodeType() == Node.ELEMENT_NODE && rightChildNode.getNodeName().equals(rightKey)) {
-                        rightKeyValue = rightChildNode.getTextContent();
-                        break;
-                    }
-                }
+                String leftKeyValue = getKeyValueFromNodeList(leftKey, leftChildNodes);
+                String rightKeyValue = getKeyValueFromNodeList(rightKey, rightChildNodes);
+
                 if (leftKeyValue != null && leftKeyValue.equals(rightKeyValue)) {
                     Element tuple = document.createElement("tuple");
                     for (int i = 0; i < leftChildNodes.getLength(); i++) {
@@ -268,8 +254,19 @@ public class XQueryEngine {
                 }
             }
         }
-        NodeList test = res.iterator().next().getChildNodes();
         return res;
+    }
+
+    private String getKeyValueFromNodeList(String key, NodeList rightChildNodes) {
+        String keyValue = null;
+        for (int i = 0; i < rightChildNodes.getLength(); i++) {
+            Node rightChildNode = rightChildNodes.item(i);
+            if (rightChildNode.getNodeType() == Node.ELEMENT_NODE && rightChildNode.getNodeName().equals(key)) {
+                keyValue = rightChildNode.getTextContent();
+                break;
+            }
+        }
+        return keyValue;
     }
 
     public void processLetClause(ParseTree tree, List<HashMap<String, Node>> varHashMapList) {
