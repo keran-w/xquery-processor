@@ -3,6 +3,7 @@ grammar XQueryGrammar;
 xquery
     : var
     | tuple
+    | joinClause
     | stringConstant
     | absolutePath
     | '(' xquery ')'
@@ -13,9 +14,9 @@ xquery
     | forClause letClause? whereClause? returnClause
     | letClause whereClause? returnClause
     | letClause xquery
-    | 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')'
     ;
 
+joinClause: 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')';
 tuple: '<tuple>' xquery (',' xquery)+ '</tuple>';
 
 forClause

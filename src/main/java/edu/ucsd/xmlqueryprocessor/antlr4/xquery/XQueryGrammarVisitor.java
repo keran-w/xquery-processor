@@ -17,6 +17,12 @@ public interface XQueryGrammarVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitXquery(XQueryGrammarParser.XqueryContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link XQueryGrammarParser#joinClause}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitJoinClause(XQueryGrammarParser.JoinClauseContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link XQueryGrammarParser#tuple}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

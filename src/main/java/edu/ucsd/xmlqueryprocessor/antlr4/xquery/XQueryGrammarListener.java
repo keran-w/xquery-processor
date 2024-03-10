@@ -18,6 +18,16 @@ public interface XQueryGrammarListener extends ParseTreeListener {
 	 */
 	void exitXquery(XQueryGrammarParser.XqueryContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link XQueryGrammarParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void enterJoinClause(XQueryGrammarParser.JoinClauseContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link XQueryGrammarParser#joinClause}.
+	 * @param ctx the parse tree
+	 */
+	void exitJoinClause(XQueryGrammarParser.JoinClauseContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link XQueryGrammarParser#tuple}.
 	 * @param ctx the parse tree
 	 */
