@@ -22,6 +22,11 @@ public class XMLParser {
 
     public static Set<Node> getNodeByNameNextLevel(Node root, String targetNodeName) {
         Set<Node> results = new LinkedHashSet<>();
+        if (root.getNodeName().equals(targetNodeName)) {
+            results.add(root);
+            return results;
+        }
+
         for (int i = 0; i < root.getChildNodes().getLength(); i++) {
             Node node = root.getChildNodes().item(i);
             if (targetNodeName.equals(node.getNodeName())) {
