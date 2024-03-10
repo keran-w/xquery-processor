@@ -11,6 +11,8 @@ public final class Constants {
     public static final String KEY_WHERE_CLAUSE = "whereClause";
     public static final String KEY_RETURN_CLAUSE = "returnClause";
     public static final String KEY_TAG_NAME = "tagName";
+    public static final String KEY_JOIN = "joinClause";
+    public static final String KEY_TUPLE = "tuple";
     public static final String QUOTE = "\"";
     public static final String EQUALS = "=";
     public static final String AT = "@";
