@@ -4,12 +4,10 @@ import edu.ucsd.xmlqueryprocessor.parser.XMLParser;
 import edu.ucsd.xmlqueryprocessor.parser.XPathParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
@@ -18,6 +16,8 @@ public class XPathEngine {
 
     private final String fileDirectory;
     private final String outputDirectory;
+
+    private final Map<String, Node> cache = new LinkedHashMap<>();
 
     public XPathEngine(String fileDirectory) {
         this.fileDirectory = fileDirectory;
@@ -75,10 +75,16 @@ public class XPathEngine {
     }
 
     private Node processFileName(String fileName) {
+        if (cache.containsKey(fileName)) {
+            return cache.get(fileName);
+        }
+
         String filePath = fileDirectory + fileName.substring(1, fileName.length() - 1);
         Document document = XMLParser.parseXML(filePath);
         assert document != null;
-        return document.getDocumentElement();
+        Element documentElement = document.getDocumentElement();
+        cache.put(fileName, documentElement);
+        return documentElement;
     }
 
     public Set<Node> processAbsolutePath(String filename, ParseTree relativePath, String op) {
