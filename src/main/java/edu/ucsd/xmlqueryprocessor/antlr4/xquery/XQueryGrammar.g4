@@ -2,6 +2,8 @@ grammar XQueryGrammar;
 
 xquery
     : var
+    | tuple
+    | joinClause
     | stringConstant
     | absolutePath
     | '(' xquery ')'
@@ -13,6 +15,9 @@ xquery
     | letClause whereClause? returnClause
     | letClause xquery
     ;
+
+joinClause: 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')';
+tuple: '<tuple>' xquery (',' xquery)+ '</tuple>';
 
 forClause
     : 'for' var 'in' xquery
@@ -35,8 +40,6 @@ returnClause
 cond
     : xquery
     | xquery '=' xquery
-
-
     | xquery 'eq' xquery
     | xquery '==' xquery
     | xquery 'is' xquery
@@ -82,6 +85,7 @@ pathFilter
     | 'not' pathFilter
     ;
 
+key: NAME;
 var: '$' NAME;
 fileName: STRING;
 tagName: NAME;

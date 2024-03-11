@@ -29,6 +29,13 @@
             <artifactId>antlr4-runtime</artifactId>
             <version>4.13.1</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>4.12</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -49,8 +56,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>9</source>
-                    <target>9</target>
+                    <source>11</source>
+                    <target>11</target>
                 </configuration>
             </plugin>
         </plugins>
