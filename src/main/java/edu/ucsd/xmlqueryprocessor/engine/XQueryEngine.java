@@ -276,32 +276,6 @@ public class XQueryEngine {
             }
         }
 
-
-//        for (Node leftNode : leftXqueryResults) {
-//            for (Node rightNode : rightXqueryResults) {
-//                NodeList leftChildNodes = leftNode.getChildNodes();
-//                NodeList rightChildNodes = rightNode.getChildNodes();
-//                String leftKeyValue = getKeyValueFromNodeList(leftKey, leftChildNodes);
-//                String rightKeyValue = getKeyValueFromNodeList(rightKey, rightChildNodes);
-//
-//                if (leftKeyValue != null && leftKeyValue.equals(rightKeyValue)) {
-//                    Element tuple = document.createElement("tuple");
-//                    for (int i = 0; i < leftChildNodes.getLength(); i++) {
-//                        Node leftChildNode = leftChildNodes.item(i);
-//                        if (leftChildNode.getNodeType() == Node.ELEMENT_NODE) {
-//                            tuple.appendChild(document.importNode(leftChildNode, true));
-//                        }
-//                    }
-//                    for (int i = 0; i < rightChildNodes.getLength(); i++) {
-//                        Node rightChildNode = rightChildNodes.item(i);
-//                        if (rightChildNode.getNodeType() == Node.ELEMENT_NODE) {
-//                            tuple.appendChild(document.importNode(rightChildNode, true));
-//                        }
-//                    }
-//                    res.add(tuple);
-//                }
-//            }
-//        }
         return res;
     }
 
