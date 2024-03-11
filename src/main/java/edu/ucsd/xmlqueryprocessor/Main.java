@@ -41,7 +41,12 @@ public class Main {
                     query = Files.readAllLines(filepath).get(index - 1);
                 }
                 System.out.println("Processing query " + index);
+                // measure time in seconds taken
+                long startTime = System.currentTimeMillis();
                 engine.evaluate(query, String.format("result%d.xml", index));
+                long endTime = System.currentTimeMillis();
+                System.out.println("Time taken: " + (endTime - startTime) / 1000.0 + " seconds");
+
                 System.out.printf("Successfully processed query %d!%n", index);
                 try {
                     FileComparer.compareFiles(

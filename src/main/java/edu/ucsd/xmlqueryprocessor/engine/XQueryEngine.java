@@ -222,30 +222,51 @@ public class XQueryEngine {
         return createSet(tuple);
     }
 
+    private HashMap<String, Set<Node>> getKeyValueHashMap(String key, Set<Node> nodes) {
+        HashMap<String, Set<Node>> keyValueHashMap = new LinkedHashMap<>();
+        for (Node node : nodes) {
+            NodeList childNodes = node.getChildNodes();
+            String keyValue = getKeyValueFromNodeList(key, childNodes);
+            if (keyValue != null) {
+                if (keyValueHashMap.containsKey(keyValue)) {
+                    keyValueHashMap.get(keyValue).add(node);
+                } else {
+                    Set<Node> set = createSet();
+                    set.add(node);
+                    keyValueHashMap.put(keyValue, set);
+                }
+            }
+        }
+        return keyValueHashMap;
+    }
+
     public Set<Node> processJoin(ParseTree tree, HashMap<String, Node> varHashMap) {
         // 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')';
         Set<Node> leftXqueryResults = processXQuery(tree.getChild(2), varHashMap);
         Set<Node> rightXqueryResults = processXQuery(tree.getChild(4), varHashMap);
         String leftKey = tree.getChild(7).getText();
         String rightKey = tree.getChild(11).getText();
-        Set<Node> res = createSet();
-        for (Node leftNode : leftXqueryResults) {
-            for (Node rightNode : rightXqueryResults) {
-                NodeList leftChildNodes = leftNode.getChildNodes();
-                NodeList rightChildNodes = rightNode.getChildNodes();
-                String leftKeyValue = getKeyValueFromNodeList(leftKey, leftChildNodes);
-                String rightKeyValue = getKeyValueFromNodeList(rightKey, rightChildNodes);
+        HashMap<String, Set<Node>> leftKeyValueHashMap = getKeyValueHashMap(leftKey, leftXqueryResults);
+        HashMap<String, Set<Node>> rightKeyValueHashMap = getKeyValueHashMap(rightKey, rightXqueryResults);
 
-                if (leftKeyValue != null && leftKeyValue.equals(rightKeyValue)) {
+        List<String> commonKeys = new ArrayList<>(leftKeyValueHashMap.keySet());
+        commonKeys.retainAll(rightKeyValueHashMap.keySet());
+
+        Set<Node> res = createSet();
+        for (String commonKey : commonKeys) {
+            Set<Node> leftNodes = leftKeyValueHashMap.get(commonKey);
+            Set<Node> rightNodes = rightKeyValueHashMap.get(commonKey);
+            for (Node leftNode : leftNodes) {
+                for (Node rightNode : rightNodes) {
                     Element tuple = document.createElement("tuple");
-                    for (int i = 0; i < leftChildNodes.getLength(); i++) {
-                        Node leftChildNode = leftChildNodes.item(i);
+                    for (int i = 0; i < leftNode.getChildNodes().getLength(); i++) {
+                        Node leftChildNode = leftNode.getChildNodes().item(i);
                         if (leftChildNode.getNodeType() == Node.ELEMENT_NODE) {
                             tuple.appendChild(document.importNode(leftChildNode, true));
                         }
                     }
-                    for (int i = 0; i < rightChildNodes.getLength(); i++) {
-                        Node rightChildNode = rightChildNodes.item(i);
+                    for (int i = 0; i < rightNode.getChildNodes().getLength(); i++) {
+                        Node rightChildNode = rightNode.getChildNodes().item(i);
                         if (rightChildNode.getNodeType() == Node.ELEMENT_NODE) {
                             tuple.appendChild(document.importNode(rightChildNode, true));
                         }
@@ -254,6 +275,33 @@ public class XQueryEngine {
                 }
             }
         }
+
+
+//        for (Node leftNode : leftXqueryResults) {
+//            for (Node rightNode : rightXqueryResults) {
+//                NodeList leftChildNodes = leftNode.getChildNodes();
+//                NodeList rightChildNodes = rightNode.getChildNodes();
+//                String leftKeyValue = getKeyValueFromNodeList(leftKey, leftChildNodes);
+//                String rightKeyValue = getKeyValueFromNodeList(rightKey, rightChildNodes);
+//
+//                if (leftKeyValue != null && leftKeyValue.equals(rightKeyValue)) {
+//                    Element tuple = document.createElement("tuple");
+//                    for (int i = 0; i < leftChildNodes.getLength(); i++) {
+//                        Node leftChildNode = leftChildNodes.item(i);
+//                        if (leftChildNode.getNodeType() == Node.ELEMENT_NODE) {
+//                            tuple.appendChild(document.importNode(leftChildNode, true));
+//                        }
+//                    }
+//                    for (int i = 0; i < rightChildNodes.getLength(); i++) {
+//                        Node rightChildNode = rightChildNodes.item(i);
+//                        if (rightChildNode.getNodeType() == Node.ELEMENT_NODE) {
+//                            tuple.appendChild(document.importNode(rightChildNode, true));
+//                        }
+//                    }
+//                    res.add(tuple);
+//                }
+//            }
+//        }
         return res;
     }
 
