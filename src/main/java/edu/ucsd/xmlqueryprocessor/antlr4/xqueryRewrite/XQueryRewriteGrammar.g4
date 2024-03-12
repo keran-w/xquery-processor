@@ -9,9 +9,7 @@ xquery
     | xquery '/' relativePath
     | xquery '//' relativePath
     | '<' tagName '>' '{' xquery '}' '</' tagName '>'
-    | forClause letClause? whereClause? returnClause
-    | letClause whereClause? returnClause
-    | letClause xquery
+    | forClause whereClause? returnClause
     ;
 
 //path :
@@ -23,11 +21,6 @@ Sep: '/' | '//';
 forClause
     : 'for' var 'in' xquery
     | forClause ',' var 'in' xquery
-    ;
-
-letClause
-    : 'let' var ':=' xquery
-    | letClause ',' 'let' var ':=' xquery
     ;
 
 whereClause
