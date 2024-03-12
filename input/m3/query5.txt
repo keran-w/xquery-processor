@@ -1,0 +1,9 @@
+for $b in doc("test-data.xml")/book,
+$a in doc("test-data.xml")/entry
+
+return
+<book-with-prices>
+{
+<price-review>{ $a/price }</price-review>,
+<price>{ $b/price }</price> }
+</book-with-prices>
