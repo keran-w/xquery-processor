@@ -16,8 +16,8 @@ xquery
     | letClause xquery
     ;
 
-joinClause: 'join' '(' xquery ',' xquery ',' '[' key ']' ',' '[' key ']' ')';
-tuple: '<tuple>' xquery (',' xquery)+ '</tuple>';
+joinClause: 'join' '(' xquery ',' xquery ',' '[' key? ']' ',' '[' key? ']' ')';
+tuple: '<tuple>' xquery (',' xquery)* '</tuple>';
 
 forClause
     : 'for' var 'in' xquery
@@ -92,6 +92,6 @@ tagName: NAME;
 attName: '@' NAME;
 stringConstant: STRING;
 
-NAME: [a-zA-Z_][a-zA-Z_0-9]*;
+NAME: [a-zA-Z_][a-zA-Z_0-9-]*;
 STRING: '"' (~["\\] | '\\\\' | '\\"')* '"';
 WS : [ \t\r\n]+ -> skip;
