@@ -45,7 +45,6 @@ public class XPathEngine {
     }
 
     public Set<Node> process(String query) {
-        System.out.println("Processing query: " + query);
         XPathParser parser = new XPathParser(query);
         ParseTree parseTree = parser.getTree();
         return processAbsolutePath(parseTree);
@@ -291,7 +290,7 @@ public class XPathEngine {
         boolean foundFlag = false;
 
         for (Node leftNode : leftResults) {
-            if (target.equals(leftNode.getTextContent())) {
+            if (leftNode != null && target.equals(leftNode.getTextContent())) {
                 foundFlag = true;
                 break;
             }

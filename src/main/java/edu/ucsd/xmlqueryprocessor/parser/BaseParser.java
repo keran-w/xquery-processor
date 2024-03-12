@@ -16,7 +16,7 @@ public abstract class BaseParser<T extends Parser> {
 
     /**
      * Create a lexer for the given charStream
-     * 
+     *
      * @param charStream
      * @return
      */
@@ -24,7 +24,7 @@ public abstract class BaseParser<T extends Parser> {
 
     /**
      * Create a parser for the given tokens
-     * 
+     *
      * @param tokens
      * @return
      */
@@ -32,7 +32,7 @@ public abstract class BaseParser<T extends Parser> {
 
     /**
      * Get the parse tree from the parser
-     * 
+     *
      * @param parser
      * @return
      */
@@ -59,6 +59,26 @@ public abstract class BaseParser<T extends Parser> {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Decorator function to print out the name of the node being processed
+     */
+    public Map<String, List<Object>> getAndPrintChildren(ParseTree tree) {
+        System.out.println("Processing " + tree.getText());
+        Map<String, List<Object>> children = getChildren(tree);
+        System.out.println("\tChildren key set: " + children.keySet());
+        for (String key : children.keySet()) {
+            if (Objects.equals(key, "otherChildren")) {
+                System.out.println("\t\t" + key + ": " + children.get(key));
+            } else {
+                for (Object child : children.get(key)) {
+                    System.out.println("\t\t" + key + ": " + ((ParseTree) child).getText());
+                }
+            }
+        }
+
+        return children;
     }
 
     public Map<String, List<Object>> getChildren(ParseTree tree) {

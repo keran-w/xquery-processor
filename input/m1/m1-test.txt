@@ -13,3 +13,4 @@ doc("j_caesar.xml")//SPEECH/SPEAKER[not(./text() = "CAESAR")]
 doc("j_caesar.xml")//ACT[SCENE/SPEECH[SPEAKER/../../*/*/text() = "CASCA"]]/TITLE
 doc("j_caesar.xml")//(ACT/SCENE/SPEECH)/(SPEAKER)/../.[not (./../TITLE==./LINE)]/../TITLE
 doc("j_caesar.xml")//SPEECH/SPEAKER[not(./text()==./*/text())]/../../../../TITLE
+doc("large-data.xml")/data/d

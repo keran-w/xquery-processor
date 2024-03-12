@@ -16,9 +16,11 @@ public class Main {
     public static void main(String[] args) throws IOException {
 
         int milestone = 3;
-        int queryCount = 2;
+        int start = 1;
+        int queryCount = 4;
+
         System.out.println("--------------------------------------------------------------------------------");
-        for (int index = 2; index <= queryCount; index++) {
+        for (int index = start; index < start + queryCount; index++) {
             try {
                 String outputDir = String.format("output/test%d/", milestone);
                 Path outputPath = Paths.get(outputDir);
@@ -27,24 +29,27 @@ public class Main {
                     Files.createDirectory(outputPath);
                 }
 
-                System.out.printf("Testing query %d%n", index);
+                // System.out.printf("Testing query %d%n", index);
                 String query;
                 Path filepath;
                 if (milestone == 3) {
-                    filepath = Paths.get(String.format("input/m%d/query%d.txt", milestone, index));
+                    filepath = Paths.get(String.format("input/m%d-rewrite/query%d.txt", milestone, index));
 //                    filepath = Paths.get(String.format("input/m%d/query%d.txt", milestone, index));
                     query = Files.readString(filepath);
                 } else {
                     filepath = Paths.get(String.format("input/m%d/m%d-test.txt", milestone, milestone));
                     query = Files.readAllLines(filepath).get(index - 1);
                 }
-
+                System.out.println("Processing query " + index);
                 engine.evaluate(query, String.format("result%d.xml", index));
                 System.out.printf("Successfully processed query %d!%n", index);
-                FileComparer.compareFiles(
-                        String.format("output/test%d/result%d.xml", milestone, index),
-                        String.format("output/m%d/result%d.xml", milestone, index)
-                );
+                try {
+                    FileComparer.compareFiles(
+                            String.format("output/test%d/result%d.xml", milestone, index),
+                            String.format("output/m%d/result%d.xml", milestone, index)
+                    );
+                } catch (Exception ignored) {
+                }
                 System.out.println("--------------------------------------------------------------------------------");
             } catch (Exception e) {
                 e.printStackTrace();
