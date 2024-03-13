@@ -17,6 +17,8 @@ import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
 import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
+import edu.ucsd.xmlqueryprocessor.engine.DisjointSet;
+
 public class XQueryRewriter {
     private final String outputDirectory;
     private final XPathEngine xpathEngine;
@@ -41,9 +43,9 @@ public class XQueryRewriter {
 
         try {
             // read the file content into the string
-            String content = new String(Files.readAllBytes(Paths.get(QUERY_FILE_DIRECTORY)));
+            query = new String(Files.readAllBytes(Paths.get(QUERY_FILE_DIRECTORY)));
             // eliminate all return and new line
-            query = content.replace("\n", "").replace("\r", "");
+            // query = content.replace("\n", "").replace("\r", "");
             // System.out.println("Processing query: \n" + query);
         } catch (IOException e) {
             e.printStackTrace();
@@ -222,6 +224,8 @@ public class XQueryRewriter {
         map.forEach((variable, expressions) -> {
             System.out.println(generateTuple(expressions));
         });
+        System.out.println(sortPairs(map.keySet(), pairs));
+        processJoin(map.keySet(), pairs);
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -273,4 +277,92 @@ public class XQueryRewriter {
 
         return builder.toString();
     }
+
+    // (1, 2), (3, 4), (1, 3), (2, 4)
+    // (1, 2), (1, 3), (2, 3), (1, 4)
+    // (1, 2), 5
+    // join( join(1,2), 5 )
+    // join (5, join(1,2) )
+    // where -> null
+
+    // (1,2), (3, 4)
+    // join( join(1,2), join(3, 4), [], [] )
+
+    // parent group (map key): 1, 2, ..., 6, 7
+    // pairs: [(1,2), (1,5), (3, 4)] -> [(1,2,5), (3,4), 6, 7]
+
+    // disjoint, 判断parent走没走过，再看怎么join
+
+    // TODO: sort the paris
+    public List<Set<String>> sortPairs(Set<String> group, List<List<String>> pairs) {
+        List<Set<String>> sortedPairs = new ArrayList<>();
+        DisjointSet ds = new DisjointSet();
+
+        // union all edges
+        for (List<String> pair : pairs) {
+            ds.union(pair.get(0), pair.get(1));
+        }
+
+        // collect disjoint set
+        Map<String, Set<String>> disjointSets = new HashMap<>();
+        for (List<String> pair: pairs) {
+            for (String var : pair) {
+                String root = ds.find(var);
+                disjointSets.putIfAbsent(root, new HashSet<>());
+                disjointSets.get(root).add(var);
+            }
+        }
+
+        sortedPairs.addAll(disjointSets.values());
+
+        return sortedPairs;
+    }
+
+
+    // TODO: join the pairs
+
+    public void processJoin(Set<String> group, List<List<String>> pairs) {
+        Set<String> visited = new HashSet<>();
+
+        // build graph
+        Map<String, Set<String>> ajList = new HashMap<>();   // adjacency list
+        for (List<String> pair : pairs) {
+            // 对于无向图，需要在两个方向上都添加边
+            ajList.computeIfAbsent(pair.get(0), k -> new HashSet<>()).add(pair.get(1));
+            ajList.computeIfAbsent(pair.get(1), k -> new HashSet<>()).add(pair.get(0));
+        }
+
+        for (String curr: ajList.keySet()) {
+            if (!visited.contains(curr)) {
+                visited.add(curr);
+                System.out.println(join(curr, ajList, visited));
+            }
+        }
+
+    }
+
+    public String join(String curr, Map<String, Set<String>> ajList, Set<String> visited) {
+        StringBuilder builder = new StringBuilder();
+        Set<String> neighbors = ajList.get(curr);
+        boolean flag = true;
+        String last = "";
+
+        for (String nb : neighbors) {
+            if (!visited.contains(nb)) {
+                // not visited
+                builder.append("join(").append(curr);
+                builder.append(last);
+                visited.add(nb);
+                builder.append(join(nb, ajList, visited));
+                builder.append(",").append(curr).append(nb).append(")");
+                last = builder.toString();
+                System.out.println(last);
+                flag = false;
+            }
+        }
+        if (flag) return curr;
+
+        return builder.toString();
+    }
+
 }
