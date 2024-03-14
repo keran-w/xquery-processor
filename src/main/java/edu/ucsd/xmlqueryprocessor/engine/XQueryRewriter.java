@@ -2,63 +2,17 @@ package edu.ucsd.xmlqueryprocessor.engine;
 
 import edu.ucsd.xmlqueryprocessor.parser.XQueryRewriterParser;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.*;
 
-import static edu.ucsd.xmlqueryprocessor.engine.XPathEngine.createSet;
-import static edu.ucsd.xmlqueryprocessor.parser.XMLParser.dumpDocument;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
-import edu.ucsd.xmlqueryprocessor.engine.DisjointSet;
-
 public class XQueryRewriter {
-    private final String outputDirectory;
-    private final XPathEngine xpathEngine;
     XQueryRewriterParser parser;
-    private Document document;
-
-    public XQueryRewriter(String fileDirectory, String outputDirectory) {
-        this.outputDirectory = outputDirectory;
-        xpathEngine = new XPathEngine(fileDirectory);
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            document = builder.newDocument();
-        } catch (Exception ignored) {
-        }
-    }
-
-    public static void main(String[] args) throws IOException {
-        String QUERY_FILE_DIRECTORY = "input/m3/query4.txt";
-        String OUTPUT_FILE_DIRECTORY = "m3-rewrite/";
-        String query = null;
-
-        try {
-            // read the file content into the string
-            query = new String(Files.readAllBytes(Paths.get(QUERY_FILE_DIRECTORY)));
-            // eliminate all return and new line
-            // query = content.replace("\n", "").replace("\r", "");
-            // System.out.println("Processing query: \n" + query);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        XQueryRewriter rewriter = new XQueryRewriter("data/", OUTPUT_FILE_DIRECTORY);
-        try {
-            rewriter.rewrite(query, "result.txt");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 
     /**
      * Decorator function to print out the name of the node being processed
@@ -80,46 +34,47 @@ public class XQueryRewriter {
         return children;
     }
 
-    public void rewrite(String query, String outputFileName) {
-        // interpret query into ParseTree
-        System.out.println("Processing query: \n" + query);
+    public void rewrite(Path inputFilePath, Path outputFilePath) throws IOException {
+        String query = Files.readString(inputFilePath);
+        String rewrittenQuery = rewrite(query);
+        try {
+            Files.write(outputFilePath, rewrittenQuery.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String rewrite(String query) {
         parser = new XQueryRewriterParser(query);
         ParseTree tree = parser.getTree();
 
-        processXQuery(tree, new HashMap<>());
-
-        String outputFilePath = outputDirectory + outputFileName;
-        // write into outputFilePath
+        String rewrittenQuery = processXQuery(tree, new HashMap<>());
+        if (!rewrittenQuery.endsWith("\n")) {
+            rewrittenQuery += "\n";
+        }
+        return rewrittenQuery;
     }
 
 
-    public void processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
+    public String processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
         Map<String, List<Object>> children = parser.getChildren(tree);
 
         // TODO: any other syntax?
         // Default: for clause, where clause, return clause
         HashMap<String, String> parent = new HashMap<>();
         HashMap<String, Set<String>> map = new HashMap<>();
-        System.out.println("===== For Clause =====");
         processForClause((ParseTree) children.get(KEY_FOR_CLAUSE).get(0), parent, map);
 
         List<List<String>> paris = null;
         if (children.containsKey(KEY_WHERE_CLAUSE)) {
             paris = processWhereClause((ParseTree) children.get(KEY_WHERE_CLAUSE).get(0), parent, map);
-            System.out.println("===== Where Clause =====");
-            System.out.println("Parent Map: " + parent);
-            System.out.println("Disjoint Set: " + map);
-            System.out.println("Pairs: " + paris);
         }
 
         ParseTree returnClause = (ParseTree) children.get(KEY_RETURN_CLAUSE).get(0);
-        System.out.println("Processing return clause: " + returnClause.getText());
-        System.out.println("===== Return Clause =====");
-        processReturnClause(tree, parent, map, paris);
+        return processReturnClause(returnClause, parent, map, paris);
     }
 
     public void processForClause(ParseTree tree, HashMap<String, String> parent, HashMap<String, Set<String>> map) {
-        System.out.println("Processing for clause: " + tree.getText());
         int childCount = tree.getChildCount();
         String varName;
         ParseTree xquery;
@@ -131,8 +86,6 @@ public class XQueryRewriter {
                 varName = tree.getChild(1).getText();
                 xquery = tree.getChild(3);
                 processInStatement(varName, xquery, parent, map);
-                System.out.println("Parent Map: " + parent);
-                System.out.println("Disjoint Set: " + map);
                 return;
             case 5:
                 // forClause ',' var 'in' xquery
@@ -141,8 +94,6 @@ public class XQueryRewriter {
                 varName = tree.getChild(2).getText();
                 xquery = tree.getChild(4);
                 processInStatement(varName, xquery, parent, map);
-                System.out.println("Parent Map: " + parent);
-                System.out.println("Disjoint Set: " + map);
                 return;
             default:
                 throw new IllegalArgumentException("processForClause: invalid child count");
@@ -173,7 +124,6 @@ public class XQueryRewriter {
 
     public List<List<String>> processWhereClause(ParseTree tree, HashMap<String, String> parent, HashMap<String, Set<String>> map) {
         // 'where' cond
-        System.out.println("Processing where clause: " + tree.getText());
         ParseTree cond = tree.getChild(1);
         return processCond(cond, parent, map);
     }
@@ -202,7 +152,7 @@ public class XQueryRewriter {
                     String rightVar = right.getText();
 
                     // check their group
-                    if (! parent.get(leftVar).equals(parent.get(rightVar))) {
+                    if (!parent.get(leftVar).equals(parent.get(rightVar))) {
                         // not in the same group
                         pairs.add(Arrays.asList(leftVar, rightVar));
                     } else {
@@ -219,13 +169,17 @@ public class XQueryRewriter {
         return pairs;
     }
 
-    public void processReturnClause(ParseTree tree, HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
+    public String processReturnClause(ParseTree tree, HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
         // join the pairs
         map.forEach((variable, expressions) -> {
-            System.out.println(generateTuple(expressions));
+            String s = generateTuple(expressions);
         });
-        System.out.println(sortPairs(pairs));
-        processJoin(parent, map, pairs);
+        // System.out.println(sortPairs(pairs));
+        String rewrittenQuery = processJoin(parent, map, pairs);
+        String text = tree.getText();
+        String replace = text.replace(",", ",\n");
+        replace = replace.replaceAll("\\$([a-zA-Z0-9]+)", "\\$tuple/$1/*");
+        return rewrittenQuery + replace;
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -261,9 +215,8 @@ public class XQueryRewriter {
             }
         });
 
-        // System.out.println(varNames);
         // Return
-        builder.append("\nreturn <tuple>\n");
+        builder.append("\n\nreturn <tuple>\n");
         varNames.forEach(var -> {
             if (flag[2]) {
                 builder.append("\t<").append(var.substring(1)).append("> {").append(var).append("} </").append(var.substring(1)).append(">");
@@ -277,22 +230,6 @@ public class XQueryRewriter {
 
         return builder.toString();
     }
-
-    // (1, 2), (3, 4), (1, 3), (2, 4)
-    // (1, 2), (1, 3), (2, 3), (1, 4)
-    // (1, 2), 5
-    // join( join(1,2), 5 )
-    // join (5, join(1,2) )
-    // where -> null
-
-    // (1,2), (3, 4)
-    // join( join(1,2), join(3, 4), [], [] )
-
-    // parent group (map key): 1, 2, ..., 6, 7
-    // pairs: [(1,2), (3,4), (1,5)] -> [(1,2,5), (3,4), 6, 7]
-
-    // disjoint, 判断parent走没走过，再看怎么join
-
     // TODO: sort the paris
     public List<Set<String>> sortPairs(List<List<String>> pairs) {
         List<Set<String>> sortedPairs = new ArrayList<>();
@@ -305,7 +242,7 @@ public class XQueryRewriter {
 
         // collect disjoint set
         Map<String, Set<String>> disjointSets = new HashMap<>();
-        for (List<String> pair: pairs) {
+        for (List<String> pair : pairs) {
             for (String var : pair) {
                 String root = ds.find(var);
                 disjointSets.putIfAbsent(root, new HashSet<>());
@@ -321,7 +258,7 @@ public class XQueryRewriter {
 
     // TODO: join the pairs
 
-    public void processJoin(HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
+    public String processJoin(HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
         // build graph
         Map<String, Set<String>> ajList = new HashMap<>();   // adjacency list
         Set<String> join_group = new HashSet<>();
@@ -343,12 +280,14 @@ public class XQueryRewriter {
             ds.add(single);
         }
 
-        System.out.println("===== Process Join =====");
-        System.out.println("for $tuple in ");
+        List<String> joinStringList = new ArrayList<>();
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
-            System.out.println(join(sub_ds_l, ajList, parent, map));
+            String joinString = join(sub_ds_l, ajList, parent, map);
+            joinStringList.add(joinString);
         }
+
+        return "for $tuple in " + String.join("\n\n", joinStringList) + "\n";
     }
 
     // BFS join connected graph
@@ -372,7 +311,8 @@ public class XQueryRewriter {
                     queue.add(nb);
                     parentName = parent.get(nb);
                     s = generateTuple(map.get(parentName));
-                    res = "join(" + res + "," + s + ", [" + curr.substring(1) + "]" + ", [" + nb.substring(1) + "]" + ")";
+                    // res = "join(" + res + "," + s + ", [" + curr.substring(1) + "]" + ", [" + nb.substring(1) + "]" + ")";
+                    res = String.format("join (%s\n,%s\n,[%s], [%s]\n)", res, s, curr.substring(1), nb.substring(1));
                 }
             }
         }
