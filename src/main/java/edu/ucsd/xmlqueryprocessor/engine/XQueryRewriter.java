@@ -280,14 +280,19 @@ public class XQueryRewriter {
             ds.add(single);
         }
 
-        List<String> joinStringList = new ArrayList<>();
+        String res = "";
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
-            String joinString = join(sub_ds_l, ajList, parent, map);
-            joinStringList.add(joinString);
+            // String joinString = join(sub_ds_l, ajList, parent, map);
+            if (res.isEmpty()) {
+                res = join(sub_ds_l, ajList, parent, map);
+            } else {
+                String s = join(sub_ds_l, ajList, parent, map);
+                res = "join(" + res + "," + s + ", [], [])";
+            }
         }
 
-        return "for $tuple in " + String.join("\n\n", joinStringList) + "\n";
+        return "for $tuple in " + res + "\n";
     }
 
     // BFS join connected graph
