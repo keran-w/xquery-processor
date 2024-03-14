@@ -2,6 +2,7 @@ package edu.ucsd.xmlqueryprocessor;
 
 import edu.ucsd.xmlqueryprocessor.engine.XPathEngine;
 import edu.ucsd.xmlqueryprocessor.engine.XQueryEngine;
+import edu.ucsd.xmlqueryprocessor.engine.XQueryRewriter;
 import edu.ucsd.xmlqueryprocessor.util.FileComparer;
 
 import java.io.IOException;
@@ -19,7 +20,7 @@ public class Main {
         int start = 1;
         int queryCount = 20;
 
-        for (int milestone = 1; milestone <= 3; milestone++) {
+        for (int milestone = 3; milestone <= 3; milestone++) {
             System.out.println("--------------------------------------------------------------------------------");
             for (int index = start; index < start + queryCount; index++) {
                 try {
@@ -43,7 +44,10 @@ public class Main {
                             query = Files.readString(inputFilepath);
                             break;
                         case 3:
-                            inputFilepath = Paths.get(String.format("input/m%d-rewrite/query%d.txt", milestone, index));
+                            XQueryRewriter rewriter = new XQueryRewriter();
+                            Path originalQueryPath = Paths.get(String.format("input/m%d/query%d.txt", milestone, index));
+                            inputFilepath = Paths.get(String.format("input/m%d-rewrite-test/query%d.txt", milestone, index));
+                            rewriter.rewrite(originalQueryPath, inputFilepath);
                             query = Files.readString(inputFilepath);
                             break;
                     }
