@@ -289,7 +289,7 @@ public class XQueryRewriter {
     // join( join(1,2), join(3, 4), [], [] )
 
     // parent group (map key): 1, 2, ..., 6, 7
-    // pairs: [(1,2), (1,5), (3, 4)] -> [(1,2,5), (3,4), 6, 7]
+    // pairs: [(1,2), (3,4), (1,5)] -> [(1,2,5), (3,4), 6, 7]
 
     // disjoint, 判断parent走没走过，再看怎么join
 
@@ -332,37 +332,38 @@ public class XQueryRewriter {
             ajList.computeIfAbsent(pair.get(1), k -> new HashSet<>()).add(pair.get(0));
         }
 
-        for (String curr: ajList.keySet()) {
-            if (!visited.contains(curr)) {
-                visited.add(curr);
-                System.out.println(join(curr, ajList, visited));
+        List<Set<String>> ds = sortPairs(group, pairs);
+        for (Set<String> sub_ds : ds) {
+            List<String> sub_ds_l = new ArrayList<>(sub_ds);
+            System.out.println(join(sub_ds_l, ajList));
+        }
+    }
+
+    // BFS join connected graph
+    public String join(List<String> nodes, Map<String, Set<String>> ajList) {
+        Set<String> visited = new HashSet<>();
+        Queue<String> queue = new LinkedList<>();
+
+        String start = nodes.get(0);
+        String res = start;
+        queue.add(start);
+        visited.add(start);
+
+        while (!queue.isEmpty()) {
+            String curr = queue.poll();
+
+            for (String nb : ajList.get(curr)) {
+                if (!visited.contains(nb)) {
+                    visited.add(nb);
+                    queue.add(nb);
+                    res = "join(" + res + "," + nb + ")";
+                }
             }
         }
 
+        return res;
     }
 
-    public String join(String curr, Map<String, Set<String>> ajList, Set<String> visited) {
-        StringBuilder builder = new StringBuilder();
-        Set<String> neighbors = ajList.get(curr);
-        boolean flag = true;
-        String last = "";
-
-        for (String nb : neighbors) {
-            if (!visited.contains(nb)) {
-                // not visited
-                builder.append("join(").append(curr);
-                builder.append(last);
-                visited.add(nb);
-                builder.append(join(nb, ajList, visited));
-                builder.append(",").append(curr).append(nb).append(")");
-                last = builder.toString();
-                System.out.println(last);
-                flag = false;
-            }
-        }
-        if (flag) return curr;
-
-        return builder.toString();
-    }
-
+    // (a1, a2), (a3, a4), (a1, a3)
+    // join(join(join(a1,a2), a3), a4)
 }
