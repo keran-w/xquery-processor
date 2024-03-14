@@ -1,5 +1,6 @@
 package edu.ucsd.xmlqueryprocessor.engine;
 
+import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
 import edu.ucsd.xmlqueryprocessor.parser.XQueryRewriterParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Node;
@@ -12,7 +13,7 @@ import java.util.*;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
 public class XQueryRewriter {
-    XQueryRewriterParser parser;
+    XQueryParser parser;
 
     /**
      * Decorator function to print out the name of the node being processed
@@ -45,7 +46,7 @@ public class XQueryRewriter {
     }
 
     public String rewrite(String query) {
-        parser = new XQueryRewriterParser(query);
+        parser = new XQueryParser(query);
         ParseTree tree = parser.getTree();
 
         String rewrittenQuery = processXQuery(tree, new HashMap<>());
