@@ -16,10 +16,12 @@ public class FileComparer {
         List<String> original = Files.readAllLines(new File(filePath1).toPath())
                 .stream()
                 .map(String::trim)
+                .filter(line -> !line.isEmpty()) // Filter out lines that are empty after trimming
                 .collect(Collectors.toList());
         List<String> revised = Files.readAllLines(new File(filePath2).toPath())
                 .stream()
                 .map(String::trim)
+                .filter(line -> !line.isEmpty()) // Filter out lines that are empty after trimming
                 .collect(Collectors.toList());
 
         Patch<String> patch = DiffUtils.diff(original, revised);
