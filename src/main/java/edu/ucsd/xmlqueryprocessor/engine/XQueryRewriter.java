@@ -224,8 +224,8 @@ public class XQueryRewriter {
         map.forEach((variable, expressions) -> {
             System.out.println(generateTuple(expressions));
         });
-        System.out.println(sortPairs(map.keySet(), pairs));
-        processJoin(map.keySet(), pairs);
+        System.out.println(sortPairs(pairs));
+        processJoin(parent, map, pairs);
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -294,7 +294,7 @@ public class XQueryRewriter {
     // disjoint, 判断parent走没走过，再看怎么join
 
     // TODO: sort the paris
-    public List<Set<String>> sortPairs(Set<String> group, List<List<String>> pairs) {
+    public List<Set<String>> sortPairs(List<List<String>> pairs) {
         List<Set<String>> sortedPairs = new ArrayList<>();
         DisjointSet ds = new DisjointSet();
 
@@ -321,31 +321,45 @@ public class XQueryRewriter {
 
     // TODO: join the pairs
 
-    public void processJoin(Set<String> group, List<List<String>> pairs) {
-        Set<String> visited = new HashSet<>();
-
+    public void processJoin(HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
         // build graph
         Map<String, Set<String>> ajList = new HashMap<>();   // adjacency list
+        Set<String> join_group = new HashSet<>();
         for (List<String> pair : pairs) {
             // 对于无向图，需要在两个方向上都添加边
             ajList.computeIfAbsent(pair.get(0), k -> new HashSet<>()).add(pair.get(1));
             ajList.computeIfAbsent(pair.get(1), k -> new HashSet<>()).add(pair.get(0));
+            join_group.add(parent.get(pair.get(0)));
+            join_group.add(parent.get(pair.get(1)));
         }
 
-        List<Set<String>> ds = sortPairs(group, pairs);
+        List<Set<String>> ds = sortPairs(pairs);
+        Set<String> diff = new HashSet<>(map.keySet());
+        // find single node
+        diff.removeAll(join_group);
+        for (String node : diff) {
+            Set<String> single = new HashSet<>();
+            single.add(node);
+            ds.add(single);
+        }
+
+        System.out.println("===== Process Join =====");
+        System.out.println("for $tuple in ");
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
-            System.out.println(join(sub_ds_l, ajList));
+            System.out.println(join(sub_ds_l, ajList, parent, map));
         }
     }
 
     // BFS join connected graph
-    public String join(List<String> nodes, Map<String, Set<String>> ajList) {
+    public String join(List<String> nodes, Map<String, Set<String>> ajList, HashMap<String, String> parent, HashMap<String, Set<String>> map) {
         Set<String> visited = new HashSet<>();
         Queue<String> queue = new LinkedList<>();
 
         String start = nodes.get(0);
-        String res = start;
+        String parentName = parent.get(start);
+        String res = generateTuple(map.get(parentName));
+        String s;
         queue.add(start);
         visited.add(start);
 
@@ -356,7 +370,9 @@ public class XQueryRewriter {
                 if (!visited.contains(nb)) {
                     visited.add(nb);
                     queue.add(nb);
-                    res = "join(" + res + "," + nb + ")";
+                    parentName = parent.get(nb);
+                    s = generateTuple(map.get(parentName));
+                    res = "join(" + res + "," + s + ", [" + curr.substring(1) + "]" + ", [" + nb.substring(1) + "]" + ")";
                 }
             }
         }
