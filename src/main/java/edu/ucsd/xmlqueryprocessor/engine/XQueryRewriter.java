@@ -225,7 +225,7 @@ public class XQueryRewriter {
             System.out.println(generateTuple(expressions));
         });
         System.out.println(sortPairs(pairs));
-        processJoin(parent, map, pairs);
+        System.out.println(processJoin(parent, map, pairs));
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -321,7 +321,7 @@ public class XQueryRewriter {
 
     // TODO: join the pairs
 
-    public void processJoin(HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
+    public String processJoin(HashMap<String, String> parent, HashMap<String, Set<String>> map, List<List<String>> pairs) {
         // build graph
         Map<String, Set<String>> ajList = new HashMap<>();   // adjacency list
         Set<String> join_group = new HashSet<>();
@@ -344,11 +344,21 @@ public class XQueryRewriter {
         }
 
         System.out.println("===== Process Join =====");
-        System.out.println("for $tuple in ");
+        String res = "";
+        // System.out.println("for $tuple in ");
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
-            System.out.println(join(sub_ds_l, ajList, parent, map));
+            if (res.isEmpty()) {
+                res = join(sub_ds_l, ajList, parent, map);
+            } else {
+                String s = join(sub_ds_l, ajList, parent, map);
+                res = "join(" + res + "," + s + ", [], [])";
+            }
+            // System.out.println(join(sub_ds_l, ajList, parent, map));
         }
+
+        res = "for $tuple in " + res;
+        return res;
     }
 
     // BFS join connected graph
