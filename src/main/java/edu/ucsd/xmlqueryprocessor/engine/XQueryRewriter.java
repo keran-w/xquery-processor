@@ -1,5 +1,6 @@
 package edu.ucsd.xmlqueryprocessor.engine;
 
+import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
 import edu.ucsd.xmlqueryprocessor.parser.XQueryRewriterParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Node;
@@ -12,7 +13,7 @@ import java.util.*;
 import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
 public class XQueryRewriter {
-    XQueryRewriterParser parser;
+    XQueryParser parser;
 
     /**
      * Decorator function to print out the name of the node being processed
@@ -45,7 +46,7 @@ public class XQueryRewriter {
     }
 
     public String rewrite(String query) {
-        parser = new XQueryRewriterParser(query);
+        parser = new XQueryParser(query);
         ParseTree tree = parser.getTree();
 
         String rewrittenQuery = processXQuery(tree, new HashMap<>());
@@ -276,22 +277,19 @@ public class XQueryRewriter {
             ds.add(single);
         }
 
-        System.out.println("===== Process Join =====");
         String res = "";
-        // System.out.println("for $tuple in ");
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
+            // String joinString = join(sub_ds_l, ajList, parent, map);
             if (res.isEmpty()) {
                 res = join(sub_ds_l, ajList, parent, map);
             } else {
                 String s = join(sub_ds_l, ajList, parent, map);
                 res = "join(" + res + "," + s + ", [], [])";
             }
-            // System.out.println(join(sub_ds_l, ajList, parent, map));
         }
 
-        res = "for $tuple in " + res;
-        return res;
+        return "for $tuple in " + res + "\n";
     }
 
     // BFS join connected graph
