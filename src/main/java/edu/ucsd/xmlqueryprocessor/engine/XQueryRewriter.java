@@ -175,8 +175,7 @@ public class XQueryRewriter {
         map.forEach((variable, expressions) -> {
             String s = generateTuple(expressions);
         });
-        System.out.println(sortPairs(pairs));
-        System.out.println(processJoin(parent, map, pairs));
+        return processJoin(parent, map, pairs);
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -259,15 +258,18 @@ public class XQueryRewriter {
         // build graph
         Map<String, Set<String>> ajList = new HashMap<>();   // adjacency list
         Set<String> join_group = new HashSet<>();
-        for (List<String> pair : pairs) {
-            // 对于无向图，需要在两个方向上都添加边
-            ajList.computeIfAbsent(pair.get(0), k -> new HashSet<>()).add(pair.get(1));
-            ajList.computeIfAbsent(pair.get(1), k -> new HashSet<>()).add(pair.get(0));
-            join_group.add(parent.get(pair.get(0)));
-            join_group.add(parent.get(pair.get(1)));
+        List<Set<String>> ds = new ArrayList<>();
+        if (pairs != null) {
+            for (List<String> pair : pairs) {
+                // 对于无向图，需要在两个方向上都添加边
+                ajList.computeIfAbsent(pair.get(0), k -> new HashSet<>()).add(pair.get(1));
+                ajList.computeIfAbsent(pair.get(1), k -> new HashSet<>()).add(pair.get(0));
+                join_group.add(parent.get(pair.get(0)));
+                join_group.add(parent.get(pair.get(1)));
+            }
+            ds = sortPairs(pairs);
         }
 
-        List<Set<String>> ds = sortPairs(pairs);
         Set<String> diff = new HashSet<>(map.keySet());
         // find single node
         diff.removeAll(join_group);
@@ -277,6 +279,7 @@ public class XQueryRewriter {
             ds.add(single);
         }
 
+        System.out.println("Disjoint Set: " + ds);
         String res = "";
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);
@@ -294,6 +297,11 @@ public class XQueryRewriter {
 
     // BFS join connected graph
     public String join(List<String> nodes, Map<String, Set<String>> ajList, HashMap<String, String> parent, HashMap<String, Set<String>> map) {
+        // connected graph only have one node, and its parent is itself.
+        if (nodes.size() == 1) {
+            String curr = nodes.get(0);
+            return generateTuple(map.get(curr));
+        }
         Set<String> visited = new HashSet<>();
         Queue<String> queue = new LinkedList<>();
 
