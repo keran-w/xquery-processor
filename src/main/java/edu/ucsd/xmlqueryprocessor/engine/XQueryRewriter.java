@@ -175,7 +175,12 @@ public class XQueryRewriter {
         map.forEach((variable, expressions) -> {
             String s = generateTuple(expressions);
         });
-        return processJoin(parent, map, pairs);
+        // System.out.println(sortPairs(pairs));
+        String rewrittenQuery = processJoin(parent, map, pairs);
+        String text = tree.getText();
+        String replace = text.replace(",", ",\n");
+        replace = replace.replaceAll("\\$([a-zA-Z0-9]+)", "\\$tuple/$1/*");
+        return rewrittenQuery + replace;
     }
 
     public String generateTuple(Set<String> expressions) {
@@ -279,7 +284,6 @@ public class XQueryRewriter {
             ds.add(single);
         }
 
-        System.out.println("Disjoint Set: " + ds);
         String res = "";
         for (Set<String> sub_ds : ds) {
             List<String> sub_ds_l = new ArrayList<>(sub_ds);

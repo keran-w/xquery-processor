@@ -79,7 +79,7 @@ public class Main {
                     }
                     System.out.println("--------------------------------------------------------------------------------");
                 } catch (Exception ignored) {
-                     ignored.printStackTrace();
+                     // ignored.printStackTrace();
                     break;
                 }
             }
