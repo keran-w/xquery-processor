@@ -1,0 +1,11 @@
+for $d1 in doc("large-data.xml")/data/d,
+$id1 in $d1/id/text(),
+$a1 in $d1/a4/text(),
+$a3 in $d1/a9/text()
+
+return <tuple>
+	<d1> {$d1} </d1>,
+	<id1> {$id1} </id1>,
+	<a1> {$a1} </a1>,
+	<a3> {$a3} </a3>
+</tuple>

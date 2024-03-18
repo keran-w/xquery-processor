@@ -1,9 +1,8 @@
 <acts>
     <act>
         <SCENE>
-            <TITLE>SCENE I. Rome. A street.</TITLE>
+            <TITLE>SCENE I.  Rome. A street.</TITLE>
             <STAGEDIR>Enter FLAVIUS, MARULLUS, and certain Commoners</STAGEDIR>
-
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
                 <LINE>Hence! home, you idle creatures get you home:</LINE>
@@ -12,62 +11,51 @@
                 <LINE>Upon a labouring day without the sign</LINE>
                 <LINE>Of your profession? Speak, what trade art thou?</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>First Commoner</SPEAKER>
                 <LINE>Why, sir, a carpenter.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>Where is thy leather apron and thy rule?</LINE>
                 <LINE>What dost thou with thy best apparel on?</LINE>
                 <LINE>You, sir, what trade are you?</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>Truly, sir, in respect of a fine workman, I am but,</LINE>
                 <LINE>as you would say, a cobbler.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>But what trade art thou? answer me directly.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>A trade, sir, that, I hope, I may use with a safe</LINE>
                 <LINE>conscience; which is, indeed, sir, a mender of bad soles.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>What trade, thou knave? thou naughty knave, what trade?</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>Nay, I beseech you, sir, be not out with me: yet,</LINE>
                 <LINE>if you be out, sir, I can mend you.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>What meanest thou by that? mend me, thou saucy fellow!</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>Why, sir, cobble you.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
                 <LINE>Thou art a cobbler, art thou?</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>Truly, sir, all that I live by is with the awl: I</LINE>
@@ -77,20 +65,17 @@
                 <LINE>recover them. As proper men as ever trod upon</LINE>
                 <LINE>neat's leather have gone upon my handiwork.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
                 <LINE>But wherefore art not in thy shop today?</LINE>
                 <LINE>Why dost thou lead these men about the streets?</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>Second Commoner</SPEAKER>
                 <LINE>Truly, sir, to wear out their shoes, to get myself</LINE>
                 <LINE>into more work. But, indeed, sir, we make holiday,</LINE>
                 <LINE>to see Caesar and to rejoice in his triumph.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>Wherefore rejoice? What conquest brings he home?</LINE>
@@ -117,7 +102,6 @@
                 <LINE>Pray to the gods to intermit the plague</LINE>
                 <LINE>That needs must light on this ingratitude.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
                 <LINE>Go, go, good countrymen, and, for this fault,</LINE>
@@ -132,13 +116,11 @@
                 <LINE>This way will I disrobe the images,</LINE>
                 <LINE>If you do find them deck'd with ceremonies.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>MARULLUS</SPEAKER>
                 <LINE>May we do so?</LINE>
                 <LINE>You know it is the feast of Lupercal.</LINE>
             </SPEECH>
-
             <SPEECH>
                 <SPEAKER>FLAVIUS</SPEAKER>
                 <LINE>It is no matter; let no images</LINE>
@@ -150,8 +132,6 @@
                 <LINE>Who else would soar above the view of men</LINE>
                 <LINE>And keep us all in servile fearfulness.</LINE>
             </SPEECH>
-
-
             <STAGEDIR>Exeunt</STAGEDIR>
         </SCENE>
     </act>

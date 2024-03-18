@@ -1,0 +1,16 @@
+doc("j_caesar.xml")//PERSONA
+doc("j_caesar.xml")//SCENE[SPEECH/SPEAKER/text() = "CAESAR"]
+doc("j_caesar.xml")//ACT[SCENE [SPEECH/SPEAKER/text() = "CAESAR" and SPEECH/SPEAKER/text() = "BRUTUS"]]
+doc("j_caesar.xml")//ACT[SCENE [SPEECH/SPEAKER/text() = "CAESAR"] [SPEECH/SPEAKER/text() = "BRUTUS"]]
+doc("j_caesar.xml")//ACT[not .//SPEAKER/text() = "CAESAR"]
+doc("j_caesar.xml")//(ACT/SCENE/SPEECH)/(SPEAKER)/../.[not (./../TITLE==./LINE)]/../TITLE
+doc("j_caesar.xml")//SPEECH/SPEAKER[not(./text()==./*/text())]/../../../../TITLE
+doc("j_caesar.xml")//SPEECH/SPEAKER[./text()]/../*/.././../../../TITLE
+doc("j_caesar.xml")//ACT[not ((./TITLE)==(./TITLE) or (./SCENE/TITLE==./SCENE/TITLE))]/*/SPEECH/../TITLE
+doc("j_caesar.xml")//(ACT/SCENE/SPEECH)/(SPEAKER)/../.[not (./../TITLE==./LINE) and (./../*/SPEAKER==./SPEAKER)]/../TITLE
+doc("j_caesar.xml")//SPEECH[SPEAKER/text()="OCTAVIUS"]/*/../LINE
+doc("j_caesar.xml")//SPEECH/SPEAKER[not(./text() = "CAESAR")]
+doc("j_caesar.xml")//ACT[SCENE/SPEECH[SPEAKER/../../*/*/text() = "CASCA"]]/TITLE
+doc("j_caesar.xml")//(ACT/SCENE/SPEECH)/(SPEAKER)/../.[not (./../TITLE==./LINE)]/../TITLE
+doc("j_caesar.xml")//SPEECH/SPEAKER[not(./text()==./*/text())]/../../../../TITLE
+doc("large-data.xml")/data/d

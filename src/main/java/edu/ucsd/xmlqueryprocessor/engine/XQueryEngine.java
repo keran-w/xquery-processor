@@ -137,6 +137,18 @@ public class XQueryEngine {
     }
 
     public Set<Node> processXQuery(ParseTree tree, HashMap<String, Node> varHashMap) {
+        /*if (varHashMap.containsKey("$tuple")) {
+            NodeList childNodes = varHashMap.get("$tuple").getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node childNode = childNodes.item(i);
+                if (childNode.getNodeType() == Node.ELEMENT_NODE) {
+                    System.out.print(childNode.getNodeName() + " ");//  + childNode.getTextContent() + " ");
+                }
+            }
+            System.out.println();
+            throw new IllegalArgumentException("processXQuery: varHashMap contains $tuple");
+        }*/
+
         Map<String, List<Object>> children = parser.getChildren(tree);
         int childCount = tree.getChildCount();
         if (childCount == 1) {
@@ -308,17 +320,62 @@ public class XQueryEngine {
     private void combineNodesToTuple(Set<Node> res, Set<Node> leftNodes, Set<Node> rightNodes) {
         for (Node leftNode : leftNodes) {
             for (Node rightNode : rightNodes) {
-                Element tuple = document.createElement("tuple");
+                HashMap<String, List<Node>> tagNameToNodeMap = new HashMap<>();
+
                 for (int i = 0; i < leftNode.getChildNodes().getLength(); i++) {
                     Node leftChildNode = leftNode.getChildNodes().item(i);
                     if (leftChildNode.getNodeType() == Node.ELEMENT_NODE) {
-                        tuple.appendChild(document.importNode(leftChildNode, true));
+                        // tuple.appendChild(document.importNode(leftChildNode, true));
+                        if (tagNameToNodeMap.containsKey(leftChildNode.getNodeName())) {
+                            tagNameToNodeMap.get(leftChildNode.getNodeName()).add(leftChildNode);
+                        } else {
+                            List<Node> list = new ArrayList<>();
+                            list.add(leftChildNode);
+                            tagNameToNodeMap.put(leftChildNode.getNodeName(), list);
+                        }
                     }
                 }
                 for (int i = 0; i < rightNode.getChildNodes().getLength(); i++) {
                     Node rightChildNode = rightNode.getChildNodes().item(i);
                     if (rightChildNode.getNodeType() == Node.ELEMENT_NODE) {
-                        tuple.appendChild(document.importNode(rightChildNode, true));
+                        // tuple.appendChild(document.importNode(rightChildNode, true));
+                        if (tagNameToNodeMap.containsKey(rightChildNode.getNodeName())) {
+                            tagNameToNodeMap.get(rightChildNode.getNodeName()).add(rightChildNode);
+                        } else {
+                            List<Node> list = new ArrayList<>();
+                            list.add(rightChildNode);
+                            tagNameToNodeMap.put(rightChildNode.getNodeName(), list);
+                        }
+                    }
+                }
+                // remove duplicate nodes, nodes are equal if gettextcontent is equal
+                for (Map.Entry<String, List<Node>> entry : tagNameToNodeMap.entrySet()) {
+                    List<Node> nodes = entry.getValue();
+                    if (nodes.size() == 1) {
+                        continue;
+                    }
+                    Set<String> nodeTextContentSet = new HashSet<>();
+                    List<Node> nodesToRemove = new ArrayList<>();
+                    for (Node node : nodes) {
+                        if (nodeTextContentSet.contains(node.getTextContent())) {
+                            nodesToRemove.add(node);
+                        } else {
+                            nodeTextContentSet.add(node.getTextContent());
+                        }
+                    }
+                    nodes.removeAll(nodesToRemove);
+                }
+
+                Element tuple = document.createElement("tuple");
+                for (Map.Entry<String, List<Node>> entry : tagNameToNodeMap.entrySet()) {
+                    if (entry.getValue().size() == 1) {
+                        tuple.appendChild(document.importNode(entry.getValue().get(0), true));
+                    } else {
+                        Node newNode = document.createElement(entry.getKey());
+                        for (Node node : entry.getValue()) {
+                            newNode.appendChild(document.importNode(node, true));
+                        }
+                        tuple.appendChild(newNode);
                     }
                 }
                 res.add(tuple);
@@ -432,12 +489,22 @@ public class XQueryEngine {
                 Set<Node> leftSet = processXQuery(left, varHashMap);
                 Set<Node> rightSet = processXQuery(right, varHashMap);
                 if (rightSet.size() == 1) {
+                    String leftNodeStr = leftSet.iterator().next().getTextContent();
                     String rightNodeStr = rightSet.iterator().next().getTextContent();
+
                     if (QUOTE.equals(rightNodeStr.substring(0, 1))) {
-                        // xquery '=' stringConstant
                         rightNodeStr = rightNodeStr.substring(1, rightNodeStr.length() - 1);
+
+                        if (QUOTE.equals(leftNodeStr.substring(0, 1))) {
+                            // stringConstant '=' stringConstant
+                            leftNodeStr = leftNodeStr.substring(1, leftNodeStr.length() - 1);
+                            return leftNodeStr.equals(rightNodeStr);
+                        }
+
+                        // xquery '=' stringConstant
+
                         for (Node leftNode : leftSet) {
-                            String leftNodeStr = leftNode.getTextContent();
+                            leftNodeStr = leftNode.getTextContent();
                             if (leftNodeStr.equals(rightNodeStr)) {
                                 return true;
                             }

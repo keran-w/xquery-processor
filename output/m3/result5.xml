@@ -1,0 +1,36 @@
+<RESULT>
+    <book-with-prices>
+        <price-review>
+            <price>1</price>
+        </price-review>
+        <price>
+            <price>50</price>
+        </price>
+    </book-with-prices>
+    <book-with-prices>
+        <price-review>
+            <price>1</price>
+        </price-review>
+        <price>
+            <price>30</price>
+            <price>45</price>
+        </price>
+    </book-with-prices>
+    <book-with-prices>
+        <price-review>
+            <price>2</price>
+        </price-review>
+        <price>
+            <price>50</price>
+        </price>
+    </book-with-prices>
+    <book-with-prices>
+        <price-review>
+            <price>2</price>
+        </price-review>
+        <price>
+            <price>30</price>
+            <price>45</price>
+        </price>
+    </book-with-prices>
+</RESULT>

@@ -1,16 +1,13 @@
-for $tuple in join (for $b in doc("test-data.xml")/book
+for $tuple in join(for $a in doc("test-data.xml")/entry
 
 return <tuple>
- <b> {$b} </b>
+	<a> {$a} </a>
 </tuple>
-
-,for $a in doc("test-data.xml")/entry
+,for $b in doc("test-data.xml")/book
 
 return <tuple>
- <a> {$a} </a>
+	<b> {$b} </b>
 </tuple>
-
-,[], []
-)
+, [], [])
 return<book-with-prices>{<price-review>{$tuple/a/*/price}</price-review>,
 <price>{$tuple/b/*/price}</price>}</book-with-prices>
