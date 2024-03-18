@@ -1,7 +1,6 @@
 package edu.ucsd.xmlqueryprocessor.engine;
 
 import edu.ucsd.xmlqueryprocessor.parser.XQueryParser;
-import edu.ucsd.xmlqueryprocessor.parser.XQueryRewriterParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Node;
 
@@ -14,6 +13,8 @@ import static edu.ucsd.xmlqueryprocessor.util.Constants.*;
 
 public class XQueryRewriter {
     XQueryParser parser;
+
+    List<String[]> constantsEq = new ArrayList<>();
 
     /**
      * Decorator function to print out the name of the node being processed
@@ -161,6 +162,8 @@ public class XQueryRewriter {
                         String varParent = parent.get(left.getText());
                         map.get(varParent).add(left.getText() + " eq " + right.getText());    // Xquery, 'eq'
                     }
+                } else if (!leftChildren.containsKey(KEY_VAR) && !rightChildren.containsKey(KEY_VAR)) {
+                    constantsEq.add(new String[]{left.getText(), right.getText()});
                 } else {
                     // var op constant
                     String varParent = parent.get(left.getText());
@@ -180,6 +183,13 @@ public class XQueryRewriter {
         String text = tree.getText();
         String replace = text.replace(",", ",\n");
         replace = replace.replaceAll("\\$([a-zA-Z0-9]+)", "\\$tuple/$1/*");
+        if (!constantsEq.isEmpty()) {
+            rewrittenQuery += "\n\nwhere ";
+            for (String[] constant : constantsEq) {
+                rewrittenQuery += constant[0] + " = " + constant[1];
+            }
+            rewrittenQuery += "\n";
+        }
         return rewrittenQuery + replace;
     }
 
@@ -231,6 +241,7 @@ public class XQueryRewriter {
 
         return builder.toString();
     }
+
     // TODO: sort the paris
     public List<Set<String>> sortPairs(List<List<String>> pairs) {
         List<Set<String>> sortedPairs = new ArrayList<>();

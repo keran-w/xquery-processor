@@ -9,6 +9,7 @@
         <title>Advanced XQuery Techniques</title>
         <author>John Smith</author>
         <price>30</price>
+        <price>45</price>
     </book>
     <entry>
         <name>Introduction to XQuery</name>
