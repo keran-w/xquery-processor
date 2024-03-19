@@ -105,14 +105,15 @@ public class XQueryRewriter {
     public void processInStatement(String varName, ParseTree xquery, HashMap<String, String> parent, HashMap<String, Set<String>> map) {
         int childCount = xquery.getChildCount();
         String parentName;
+        String finalParent;
 
         if (childCount == 3) {
             // xquery: var / relativePath
             parentName = xquery.getChild(0).getText();
-
+            finalParent = parent.get(parentName);
             // {var: parent}
-            parent.put(varName, parentName);
-            map.get(parentName).add(varName + " in " + xquery.getText());
+            parent.put(varName, finalParent);
+            map.get(finalParent).add(varName + " in " + xquery.getText());
 
         } else {
             // xquery: absolutePath
